@@ -33,8 +33,8 @@
  *  Script Output:
  *  1. Generate Invoice
  */
-define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/email', 'N/currentRecord'],
-  function(error, runtime, search, url, record, format, email, currentRecord) {
+define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/email', 'N/currentRecord', 'N/render'],
+  function(error, runtime, search, url, record, format, email, currentRecord, render) {
     var baseURL = 'https://1048144.app.netsuite.com';
     if (runtime.EnvType == "SANDBOX") {
         baseURL = 'https://1048144-sb3.app.netsuite.com';
@@ -48,6 +48,13 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
         var zee = 0;
         var custid = 0;
 
+        $(document).ready(function(){
+            $('.main_form').css('background-color', '#CFE0CE');
+            $(this).css('background-color', '#CFE0CE')
+        })
+
+        
+
         /**
              *  Click for Instructions Section Collapse
              */
@@ -59,34 +66,123 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
         });
 
         $('.zee_dropdown').on('change', function(){
-            zee = $(this).val();
+            var zee = $(this).val();
             var upload_url = baseURL + url.resolveScript({
                 deploymentId: 'customdeploy_cl_consol_inv',
                 scriptId: 'customscript_cl_consol_inv'
             }) + '&zee=' + zee; 
             window.open(upload_url, "_self", "height=750,width=650,modal=yes,alwaysRaised=yes")
         });
-        $('.cus_dropdown').on('change', function(){
-            custid = $(this).val();
+        $('.cust_dropdown').on('change', function(){
+            var custid = $(this).val();
             var upload_url = baseURL + url.resolveScript({
                 deploymentId: 'customdeploy_cl_consol_inv',
                 scriptId: 'customscript_cl_consol_inv'
             }) + '&custid=' + custid;
+            window.open(upload_url, "_self", "height=750,width=650,modal=yes,alwaysRaised=yes")
         });
+        
         $('.inv_type_dropdown').on('change', function(){
-            inv_type = $(this).val();
+            var consol_method = $(this).val();
             var upload_url = baseURL + url.resolveScript({
                 deploymentId: 'customdeploy_cl_consol_inv',
                 scriptId: 'customscript_cl_consol_inv'
-            }) + '&inv_type=' + inv_type;
+            }) + '&inv_type=' + consol_method;
+            window.open(upload_url, "_self", "height=750,width=650,modal=yes,alwaysRaised=yes")
         });
         if(!isNullorEmpty($('.inv_type').val())){
             $('.export_csv').removeClass('hide')
         }
+
+        custid = ctx.getParameter({
+            name: 'custscript_consol_inv_custid'
+        });
+        zee_id = ctx.getParameter({
+            name: 'custscript_consol_inv_zee_id'
+        });
+        consol_method = ctx.getParameter({
+            name: 'custscript_consol_inv_method'
+        });
+        var sub_custid = ctx.getParameter({
+            name: 'custscript_consol_inv_sub_custid'
+        });
+
+        if (!isNullorEmpty(sub_custid))
+        $('.subcust_dropdown').on('change', function(){
+            sub_custid = $(this).val();
+            var upload_url = baseURL + url.resolveScript({
+                deploymentId: 'customdeploy_cl_consol_inv',
+                scriptId: 'customscript_cl_consol_inv'
+            }) + '&subcustid=' + sub_custid;
+            window.open(upload_url, "_self", "height=750,width=650,modal=yes,alwaysRaised=yes")
+        });
+
+        $('.generateInvoice').on('click', function(){
+            generateInvoice();
+        });
     }
 
     function generateInvoice(){
+        var consolInvRecord = record.load({
+            type: 'customrecord_consol_inv_json',
+            id: '1'
+        });
+        consolInvRecord.each(function(consolInv){
 
+            var consol_inv_json = consolInv.getValue({ fieldId: 'custrecord_consol_inv_json'});
+
+            for (var x = 0; x < consol_inv_json.length; x++){
+                var json_list = consol_inv_json[consol_inv_json.length - 1].json[x];
+                var json = consol_inv_json[consol_inv_json.length - 1];
+
+
+                var merge = new Array();
+                for (var z = 0; z < 50; z++){
+                    merge['NLDATE'] = json.date
+                    merge['NLINVOICE'] = json.invoice
+                    merge['NLDUEDATE'] = json.duedate
+                    // merge['NLABN']
+                    merge['NLCUSTPO'] = json.po_box
+                    merge['NLSERVICEFROM'] = json.service_from
+                    merge['NLSERVICETO'] = json.service_to
+                    // merge['NLTERMS'] = json.terms
+
+                    merge['NLCOMPANYNAME'] = json.companyname;
+                    merge['NLBILLINGADDRESS'] = json.billaddress;
+
+                    merge['NLSTATE' + (z + 1)] = json_list.state;
+                    merge['NLLOCATION' + (z + 1)] = json_list.location;
+                    merge['NLTYPE' + (z + 1)] = json_list.type;
+                    merge['NLITEM' + (z + 1)] = json_list.item;
+                    merge['NLDETAILS' + (z + 1)] = json_list.details;
+                    merge['NLREF' + (z + 1)] = json_list.ref;
+                    merge['NLQTY' + (z + 1)] = json_list.qty;
+                    merge['NLRATE' + (z + 1)] = json_list.rate;
+                    merge['NLAMOUNT' + (z + 1)] = json_list.amount;
+                    merge['NLGST' + (z + 1)] = json_list.gst;
+                    merge['NLGROSS' + (z + 1)] = json_list.gross;
+                }
+            
+                // var fileSCFORM = nlapiMergeRecord(prod_usage_report[x], 'customer', old_customer_id, null, null, merge);
+                // fileSCFORM.setName('MPEX_ProductUsageReport_' + getDate() + '_' + old_customer_id + '_' + (x + 1) + '.pdf');
+                // fileSCFORM.setIsOnline(true);
+                // fileSCFORM.setFolder(2177205);
+
+                // var id = nlapiSubmitFile(fileSCFORM);
+
+                var filePDF = file.load('Templates/PDF Templates/Consolidation Invoice - ' + consol_method + ' Template.pdf');
+                var myPDFFile = render.create();
+                mpyPDFFile.templateContent = filePDF.getContents();
+                myPDFFile.addCustomDataSource({
+                    alias: 'JSON',
+                    format: render.DataSource.OBJECT,
+                    data: JSON.parse(merge)
+                });
+                myPDFFile.setFolder()
+                var newPDF = myPDFFile.renderAsPdf();
+                console.log(newPDF);
+            }
+        });
     }
 
     function reloadPageWithParams(){
@@ -152,6 +248,21 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
 
     function isNullorEmpty(strVal) {
         return (strVal == null || strVal == '' || strVal == 'null' || strVal == undefined || strVal == 'undefined' || strVal == '- None -');
+    }
+
+    /**
+     * [getDate description] - Get the current date
+     * @return {[String]} [description] - return the string date
+     */
+     function getDate() {
+        var date = new Date();
+        date = format.format({
+            value: date,
+            type: format.Type.DATE,
+            timezone: format.Timezone.AUSTRALIA_SYDNEY
+        });
+
+        return date;
     }
 
     return {
