@@ -26,8 +26,8 @@
  * 
  */
 
- define(['N/runtime', 'N/search', 'N/record', 'N/log', 'N/task', 'N/currentRecord', 'N/format'],
- function(runtime, search, record, log, task, currentRecord, format) {
+ define(['N/runtime', 'N/search', 'N/record', 'N/log', 'N/task', 'N/currentRecord', 'N/format', 'N/render'],
+ function(runtime, search, record, log, task, currentRecord, format, render) {
     var zee = 0;
     var role = 0;
 
@@ -45,6 +45,7 @@
     } else if (role == 1032) { // System Support
         zee = 425904; //test-AR
     }
+    var ctx = getCurrentScript();
 
     function main() {
 
@@ -59,15 +60,19 @@
         var custid = ctx.getParameter({
             name: 'custscript_consol_inv_custid'
         });
+        var sub_custid = ctx.getParameter({
+            name: 'custscript_consol_inv_sub_custid'
+        });
         var zee_id = ctx.getParameter({
             name: 'custscript_consol_inv_zee_id'
         });
         var consol_method = ctx.getParameter({
             name: 'custscript_consol_inv_method'
         });
-        var sub_custid = ctx.getParameter({
-            name: 'custscript_consol_inv_sub_custid'
+        var period = ctx.getParameter({
+            name: 'custscript_consol_inv_period'
         });
+        
 
         log.debug({
             title: 'Customer ID',
@@ -83,12 +88,12 @@
             id: 'customer'
         });
         consolInvSearch.filter.push(search.createFilter({
-            // name: '',
-            // join: string,
-            // operator: string,
-            // values:
+            name: 'internalid',
+            join: 'subcustomer',
+            operator: search.Operator.EQUALTO,
+            values: 712095 // PetStock - Mt Annan
         }));
-        var consolInvResults = consolInvSearch.run()
+        var consolInvResults = consolInvSearch.run();
 
         var consol_inv_json = ctx.getParameter({ name: 'custscript_consol_inv_json'})
         if (isNullorEmpty(consol_inv_list)){
@@ -110,16 +115,19 @@
         consolInvResults.each(function(searchResult){
             // var custid = searchResult.getValue({ name: 'entity'});
             // var zee_id = searchResult.getValue({ name: 'partner'});
-            // var consol_type = searchResult.getValue({ name: ''})            
+            // var consol_type = searchResult.getValue({ name: ''})   
+            var company_name = searchResult.getValue({ name: 'companyname'});
+
+            var amount, gst, gross;
 
             var consolRecord = record.create({
                 type: 'customrecord_consol_inv_json',
                 isDynamic: true
             });
-
             consolRecord.setValue({ fieldId: 'custrecord_consol_inv_custid'})
             consolRecord.setValue({ fieldId: 'custrecord_consol_inv_zee_id'})
             consolRecord.setValue({ fieldId: 'custrecord_consol_inv_method'})
+            consolRecord.setValue({ fieldId: 'custrecord_consol_inv_period'})
             if (!isNullOrEmpty(sub_custid)){
                 consolRecord.setValue({ fieldId: 'custrecord_consol_inv_sub_custid'})
             }
@@ -158,19 +166,19 @@
                         title: 'usageLimit',
                         details: usageLimit
                     })
-                    data_set.pop();
-                    log.audit({
-                        title: 'data_set',
-                        details: data_set
-                    });
+                    // data_set.pop();
+                    // log.audit({
+                    //     title: 'data_set',
+                    //     details: data_set
+                    // });
                     params = {
-                        custscript_consol_inv_data_set: JSON.stringify(data_set),
+                        custscript_consol_inv_json: JSON.stringify(consol_inv_json),
                         custscript_consol_inv_invid: JSON.stringify(invoice_id)
                     };
                     reschedule = task.create({
                         taskType: task.TaskType.SCHEDULED_SCRIPT,
                         scriptId: 'customscript_ss_consol_inv',
-                        deploymentId: 'customdeploy_ss_consol_inv',
+                        deploymentId: 'customdeploy_ss_consol_inv_test',
                         params: params
                     });
                     
@@ -189,23 +197,24 @@
                     if (invoice_id_set.indexOf(invoice_id) == -1){
                         invoice_id_set.push(invoice_id);
 
-                        if (isNullorEmpty){
-                            consol_inv_json.push({
-                                date: date,
-                                due_date: due_date,
-                                abn: abn,
-                                po_box: po_box,
-                                service_from: service_from,
-                                service_to: service_to,
-                                terms: terms 
-                            });
-                        }
-
                         /**
                         *  Tax Invoice Header
                         */
-                        var date = line_item.getValue({ name: 'date'})
+                        var date = line_item.getValue({ name: 'date'});
+
+                        var date_object = new Date();
                         //Invoice Number - Code + Year Number + Month Number (ie: 'CODE'2104)
+                        var location = line_item.getValue({ name: 'companyname' });
+                        var year = (date_object.getFullYear()).split('');
+                        var year_code = year[2] + year[3];
+                        var month = date_object.getMonth();
+                        if (month < 10){
+                            var month_code = '0' + month;
+                        } else{
+                            var month_code = month;
+                        }
+                        var invoice_code = name_code + year_code + month_code
+
                         var due_date = line_item.getValue({ name: 'duedate'})
                         var abn = '45 609 801 194'; // MailPlus ABN
                         //var abn = line_item.getValue({ name: 'custbody_franchisee_abn' });
@@ -219,20 +228,35 @@
                         */
                         var billaddress = line_item.getValue({ name: 'billaddress'});
 
+                        if (isNullorEmpty(consol_inv_json)){
+                            consol_inv_json.push({
+                                date: date,
+                                inv_code: invoice_code,
+                                due_date: due_date,
+                                abn: abn,
+                                po_box: po_box,
+                                service_from: service_from,
+                                service_to: service_to,
+                                terms: terms,
+                                companyname: company_name,
+                                billaddress: billaddress
+                            });
+                        }
+
                         /**
                         *  Table
                         */
                         var state = line_item.getValue({ name: 'location' });
-                        var location = line_item.getValue({ name: 'companyname' });
+                        // var location = line_item.getValue({ name: 'companyname' });
                         var type = line_item.getValue({ name: 'custbody_inv_type'});
                         var item = line_item.getValue({ name: 'item'});
                         var details = line_item.getValue({ name: 'custcol1'});
                         var ref = line_item.getValue({ name: ''})
                         var qty = line_item.getValue({ name: ''})
                         var rate = line_item.getValue({ name: 'rate'})
-                        var amount = line_item.getValue({ name: 'amount'});
-                        var gst = line_item.getValue({ name: 'taxamount'});
-                        var gross = line_item.getValue({ name: "formulacurrency", formula: '{amount}+{taxamount}'});
+                        amount += line_item.getValue({ name: 'amount'});
+                        gst += line_item.getValue({ name: 'taxamount'});
+                        gross += line_item.getValue({ name: "formulacurrency", formula: '{amount}+{taxamount}'});
 
                         consol_inv_line_item.push({
                             id: invoice_id,
@@ -265,6 +289,72 @@
 
             return true;
         });
+
+        
+        log.debug({
+            title: 'JSON String',
+            details: consol_inv_json
+        })
+        for (var x = 0; x < consol_inv_json.length; x++){
+            var json_list = consol_inv_json[consol_inv_json.length - 1].json[x];
+            var json = consol_inv_json[consol_inv_json.length - 1];
+
+            var merge = new Array();
+            for (var z = 0; z < 50; z++){
+                merge['NLDATE'] = json.date
+                merge['NLINVOICE'] = json.invoice
+                merge['NLDUEDATE'] = json.duedate
+                // merge['NLABN']
+                merge['NLCUSTPO'] = json.po_box
+                merge['NLSERVICEFROM'] = json.service_from
+                merge['NLSERVICETO'] = json.service_to
+                // merge['NLTERMS'] = json.terms
+
+                merge['NLCOMPANYNAME'] = json.companyname;
+                merge['NLBILLINGADDRESS'] = json.billaddress;
+
+                merge['NLSTATE' + (z + 1)] = json_list.state;
+                merge['NLLOCATION' + (z + 1)] = json_list.location;
+                merge['NLTYPE' + (z + 1)] = json_list.type;
+                merge['NLITEM' + (z + 1)] = json_list.item;
+                merge['NLDETAILS' + (z + 1)] = json_list.details;
+                merge['NLREF' + (z + 1)] = json_list.ref;
+                merge['NLQTY' + (z + 1)] = json_list.qty;
+                merge['NLRATE' + (z + 1)] = json_list.rate;
+                merge['NLAMOUNT' + (z + 1)] = json_list.amount;
+                merge['NLGST' + (z + 1)] = json_list.gst;
+                merge['NLGROSS' + (z + 1)] = json_list.gross;
+            }
+            
+            // console.log('PDF File' + merge)
+            log.debug({
+                title: 'PDF File - Merge',
+                details: merge
+            })
+            // var fileSCFORM = nlapiMergeRecord(prod_usage_report[x], 'customer', old_customer_id, null, null, merge);
+            // fileSCFORM.setName('MPEX_ProductUsageReport_' + getDate() + '_' + old_customer_id + '_' + (x + 1) + '.pdf');
+            // fileSCFORM.setIsOnline(true);
+            // fileSCFORM.setFolder(2177205);
+
+            // var id = nlapiSubmitFile(fileSCFORM);
+
+            var filePDF = file.load('Templates/PDF Templates/Consolidation Invoice - ' + consol_method + ' Template.pdf');
+            var myPDFFile = render.create();
+            myPDFFile.templateContent = filePDF.getContents();
+            myPDFFile.addCustomDataSource({
+                alias: 'JSON',
+                format: render.DataSource.OBJECT,
+                data: JSON.parse(merge)
+            });
+            myPDFFile.setFolder(2775794);
+            var newPDF = myPDFFile.renderAsPdf();
+            var newPDFSave = myPDFFile.save();
+            // console.log(newPDF);
+            log.audit({
+                title: 'PDF File - Export',
+                details: newPDF
+            })
+        }
     }
 
 
@@ -292,6 +382,10 @@
             type: 'customrecord_export_run_json',
             id: index
         });    
+    }
+
+    function isNullorEmpty(strVal) {
+        return (strVal == null || strVal == '' || strVal == 'null' || strVal == undefined || strVal == 'undefined' || strVal == '- None -');
     }
 
     return {
