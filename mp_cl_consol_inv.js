@@ -78,9 +78,9 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
         var custid = currRec.getValue({
             fieldId: 'custpage_consol_inv_custid'
         });
-        var custname = currRec.getValue({
-            fieldId: 'custpage_consol_inv_custname'
-        });
+        // var custname = currRec.getValue({
+        //     fieldId: 'custpage_consol_inv_custname'
+        // });
         var sub_custid = currRec.getValue({
             fieldId: 'custpage_consol_inv_sub_custid'
         });
@@ -90,16 +90,23 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
         var zee_id = currRec.getValue({
             fieldId: 'custpage_consol_inv_zee'
         });
-        var period = currRec.getValue({
-            fieldId: 'custpage_consol_inv_period'
-        });
-        console.log('Cust Name: ', custname)
+        // var period = currRec.getValue({
+        //     fieldId: 'custpage_consol_inv_period'
+        // });
+
+        consol_method_id = ifIsEmpty(consol_method_id);
+        custid = ifIsEmpty(custid);
+        sub_custid = ifIsEmpty(sub_custid);
+        sub_subcustid = ifIsEmpty(sub_subcustid);
+        zee_id = ifIsEmpty(zee_id); 
+        // console.log('Cust Name: ', custname)
         console.log('Cust ID:', custid)
         console.log('Sub Cust ID:', sub_custid)
         console.log('Zee ID:', zee_id)
         console.log('Consol Method:', consol_method_id)
-        console.log('Period:', period)
+        // console.log('Period:', period)
 
+        
 
         if(!isNullorEmpty($('#method_dropdown').val())){
             // $('.export_csv').removeClass('hide');
@@ -116,77 +123,105 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
 
         $(document).on('change', '#method_dropdown', function(){
             consol_method_id = $(this).val();
-            var url = '&method=' + consol_method_id  + '&zee=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid;
+            var url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid;
             if (isNullorEmpty(sub_subcustid)){
-                url = '&method=' + consol_method_id  + '&zee=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&subsubcustid=' + sub_subcustid; 
+                url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&subsubcustid=' + sub_subcustid; 
             }
             var upload_url = baseURL + url.resolveScript({
                 deploymentId: 'customdeploy_sl_consol_inv',
                 scriptId: 'customscript_sl_consol_inv'
-            }) + url;
+            }) + url_link;
             currRec.setValue({ fieldId: 'custpage_consol_inv_method_id', value: consol_method_id });
             window.location.href = upload_url
         });
         $(document).on('change', '#zee_dropdown', function(){
             zee_id = $(this).val();
-            var url = '&method=' + consol_method_id  + '&zee=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid;
+            var url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid;
             if (!isNullorEmpty(sub_subcustid)){
-                url = '&method=' + consol_method_id  + '&zee=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&subsubcustid=' + sub_subcustid; 
+                url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&subsubcustid=' + sub_subcustid; 
             }
             var upload_url = baseURL + url.resolveScript({
                 deploymentId: 'customdeploy_sl_consol_inv',
                 scriptId: 'customscript_sl_consol_inv'
-            }) + url;
+            }) + url_link;
             currRec.setValue({ fieldId: 'custpage_consol_inv_custid', value: zee_id });
             window.location.href = upload_url
         });
         $(document).on('change', '#parent_dropdown', function(){
             custid = $(this).val();
-            var url = '&method=' + consol_method_id  + '&zee=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid;
+            var url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid;
             if (!isNullorEmpty(sub_subcustid)){
-                url = '&method=' + consol_method_id  + '&zee=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&subsubcustid=' + sub_subcustid; 
+                url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&subsubcustid=' + sub_subcustid; 
             }
             var upload_url = baseURL + url.resolveScript({
                 deploymentId: 'customdeploy_sl_consol_inv',
                 scriptId: 'customscript_sl_consol_inv'
-            }) + url;
+            }) + url_link;
 
             window.location.href = upload_url
         });
         $(document).on('change', '#cust_dropdown', function(){
             sub_custid = $(this).val();
-            var url = '&method=' + consol_method_id  + '&zee=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid;
+            var url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid;
             if (!isNullorEmpty(sub_subcustid)){
-                url = '&method=' + consol_method_id  + '&zee=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&subsubcustid=' + sub_subcustid; 
+                url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&subsubcustid=' + sub_subcustid; 
             }
             var upload_url = baseURL + url.resolveScript({
                 deploymentId: 'customdeploy_sl_consol_inv',
                 scriptId: 'customscript_sl_consol_inv'
-            }) + url;
+            }) + url_link;
             window.location.href = upload_url
         });
         $(document).on('change', '#subcust_dropdown', function(){
             sub_subcustid = $(this).val();
-            var url = '&method=' + consol_method_id  + '&zee=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid;
+            var url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid;
             if (!isNullorEmpty(sub_subcustid)){
-                url = '&method=' + consol_method_id  + '&zee=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&subsubcustid=' + sub_subcustid; 
+                url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&subsubcustid=' + sub_subcustid; 
             }
             var upload_url = baseURL + url.resolveScript({
                 deploymentId: 'customdeploy_sl_consol_inv',
                 scriptId: 'customscript_sl_consol_inv'
-            }) + url;
+            }) + url_link;
             window.location.href = upload_url
         });
 
 
         $('#generateInvoice').click(function() {
-            $('#submitter').trigger('click');
-            $('#generateInvoice').submit();
+            // $('#submitter').trigger('click');
+
+            $('#downloadPDF').show(); // PDF Download Button
+            $('#downloadExcel').show() // Excel Download Button
+
+            var dataTable = $('#inv_preview').DataTable({
+                data: debtDataSet,
+                pageLength: 1000,
+                order: [[8, 'asc']],
+            })
+
+            
+            
+            // $('#generateInvoice').submit();
         });
 
         $('#downloadPDF').click(function(){
+            // var locatePDF = setInterval(downloadPDF, 5000); 
             downloadPDF();
         });
+
+        $('#downloadExcel').click(function(){
+            // var locatePDF = setInterval(downloadPDF, 5000); 
+            downloadExcel();
+        });
+
+    }
+
+    function ifIsEmpty(val){
+        if (isNullorEmpty(val) || isNaN(val)){
+            val = 0;
+        } else {
+            val = val;
+        }
+        return parseInt(val);
     }
 
     // function reloadPageWithParams(){
@@ -203,28 +238,37 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
             id: 'customsearch_consol_inv_file',
             type: 'file'
         });
-        file_search.run().each(function(res){
-            var internalid = res.getValue({ name: 'internalid'});
-            // var pdf = file.load({
-            //     id: internalid
-            // });
-            // var a = document.createElement('a');
-            // document.body.appendChild(a);
-            // a.style = 'display: none';
-            // var content_type = 'text/pdf';
-            // var pdfFile = new Blob([pdf], { type: content_type });
-            // var url = window.URL.createObjectURL(pdfFile);
-            // var filename = 'consolidation_invoice_' + custname + '.pdf';
-            // var filename = 'consolidation_invoice.pdf';
-            // a.href = url;
-            // a.download = filename;
-            // a.click();
-            // window.URL.revokeObjectURL(url);
+        var fileResult = file_search.run().getRange({start: 0, end: 1});
+        if(!isNullorEmpty(JSON.stringify(fileResult))){
+            // clearInterval(locatePDF);
 
-            $('#fileReady').hide();
-            $('#fileLoading').show();
-        });
-        
+            fileResult.forEach(function(res){
+                var internalid = res.getValue({ name: 'internalid'});
+                var link = res.getValue({ name: 'url'})
+                // var pdf = file.load({
+                //     id: internalid
+                // });
+                // var a = document.createElement('a');
+                // document.body.appendChild(a);
+                // a.style = 'display: none';
+                // var content_type = 'text/pdf';
+                // var pdfFile = new Blob([pdf], { type: content_type });
+                // var url = window.URL.createObjectURL(pdfFile);
+                // var filename = 'consolidation_invoice_' + custname + '.pdf';
+                // var filename = 'consolidation_invoice.pdf';
+                // a.href = url;
+                // a.download = filename;
+                // a.click();
+                // window.URL.revokeObjectURL(url);
+    
+                $('#fileReady').show();
+                $('#fileLoading').show();
+    
+                window.open(baseURL + link, '_blank');
+            });
+        } else {
+            alert('File Is Not Ready... Please Wait a Few Seconds');
+        }
     }
 
     function saveRecord(context) {

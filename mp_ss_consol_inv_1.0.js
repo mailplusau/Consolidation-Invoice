@@ -51,26 +51,35 @@
         /**
             Load Parameters from SL
          */
-
-        var custid = ctx.getSetting('SCRIPT', 'custscript_consol_inv_custid');
+        var custid = parseInt(ctx.getSetting('SCRIPT', 'custscript_consol_inv_custid'));
         var sub_custid = ctx.getSetting( 'SCRIPT', 'custscript_consol_inv_sub_custid');
         var sub_subcustid = ctx.getSetting( 'SCRIPT', 'custscript_consol_inv_sub_subcustid');
         var zee_id = ctx.getSetting( 'SCRIPT', 'custscript_consol_inv_zee_id');
         var consol_method = ctx.getSetting( 'SCRIPT', 'custscript_consol_inv_method');
+        var consol_method_id = ctx.getSetting( 'SCRIPT', 'custscript_consol_inv_method');
         var period = ctx.getSetting( 'SCRIPT', 'custscript_consol_inv_period');
 
-        custid = 623512; //
-        sub_custid = 712095; //
+        // zee_id = 3484879;
+        // custid = 623512; //
+        // sub_custid = 712095; //
         sub_subcustid = null;
-        zee_id = 3484879;
-        consol_method = 'State';
-        period = 'Apr 21';
+        // consol_method = 'State';
+        // consol_method_id = 2;
+        // period = 'Apr 21';
+
+        switch (consol_method_id) {
+            case '1' : consol_method = 'Branch'; break;
+            case '2' : consol_method = 'State'; break;
+            case '3' : consol_method = 'Invoice Type'; break;
+            case '4' : consol_method = 'Multi-Parent'; break;
+            default: consol_method = 'State';
+        }
         
         nlapiLogExecution('DEBUG', 'Customer ID', custid);
         nlapiLogExecution('DEBUG', 'Sub Customer ID', sub_custid);
         nlapiLogExecution('DEBUG', 'Franchisee ID', zee_id);
         nlapiLogExecution('DEBUG', 'Consolidation Method', consol_method);
-        nlapiLogExecution('DEBUG', 'Period', period);
+        // nlapiLogExecution('DEBUG', 'Period', period);
 
         var consolInvSearch = nlapiLoadSearch('customer', 'customsearch_consol_inv_custlist')
         // var consolInvSearchFilter = [['subcustomer.internalid', 'is', sub_custid]]
@@ -84,7 +93,7 @@
         var consol_inv_json = ctx.getSetting('SCRIPT', 'custscript_consol_inv_json')
         if (isNullorEmpty(consol_inv_json)){
             // deleteRecords();
-            consol_inv_json = [];
+            consol_inv_json = JSON.parse(JSON.stringify([]));
         } else {
             consol_inv_json = JSON.parse(consol_inv_json);
         }
@@ -109,23 +118,16 @@
             nlapiLogExecution('DEBUG', 'Consol Method Search', consol_method_search)
             
             var amount, gst, gross;
-
             var name = custid + '_' + zee_id + '_' + getDate();
+
             var consolRecord = nlapiCreateRecord('customrecord_consol_inv_json');
             consolRecord.setFieldValue('name', name);
             consolRecord.setFieldValue('custrecord_consol_inv_custid', custid);
             consolRecord.setFieldValue('custrecord_consol_inv_sub_custid', sub_custid);
             consolRecord.setFieldValue('custrecord_consol_inv_zee_id', zee_id);
-            switch (consol_method_id) {
-                case '1' : consol_method = 'Branch'; break;
-                case '2' : consol_method = 'State'; break;
-                case '3' : consol_method = 'Invoice Type'; break;
-                case '4' : consol_method = 'Multi-Parent'; break;
-                default: consol_method = 'State';
-            }
             consolRecord.setFieldValue('custrecord_consol_inv_method', consol_method);
             // consolRecord.setFieldValue('custrecord_consol_inv_period', period);
-            if (!isNullorEmpty(sub_subcustid)){
+            if (!isNullorEmpty(sub_subcustid) || sub_subcustid != 0){
                 consolRecord.setFieldValue('custrecord_consol_inv_sub_subcustid', sub_custid);
             }
 
@@ -138,8 +140,8 @@
             consolInvItemFilter = [['customer.internalid', 'is', sub_custid]]
             consolInvItemSearch.setFilterExpression(consolInvItemFilter)
             var consolInvItemResults = consolInvItemSearch.runSearch();
-
             nlapiLogExecution('DEBUG', 'Run Search', JSON.stringify(consolInvItemResults))
+
             consolInvItemResults.forEachResult(function(line_item){
                 nlapiLogExecution('DEBUG', 'In Line Item Search')
                 var usageLimit = ctx.getRemainingUsage();
@@ -148,6 +150,12 @@
                     nlapiLogExecution('AUDIT', 'usageLimit', usageLimit);
                     // data_set.pop();
                     params = {
+                        custscript_consol_inv_custid: custid,
+                        custscript_consol_inv_sub_custid: sub_custid,
+                        custscript_consol_inv_zee_id: zee_id,
+                        custscript_consol_inv_method: consol_method,
+                        custscript_consol_inv_period: period,
+                        custscript_consol_inv_method_id: consol_method_id,
                         custscript_consol_inv_json: JSON.stringify(consol_inv_json),
                         custscript_consol_inv_invid: JSON.stringify(invoice_id)
                     };
@@ -243,79 +251,79 @@
                             gst: gst,
                             gross: gross
                         });
-
                         consol_inv_json.push({ lineitem: consol_inv_line_item })
 
-                        return true;
-                    }                    
+                        
+                    }              
                 }
-
+                
+                return true;
             });
               
             consolRecord.setFieldValue('custrecord_consol_inv_json', consol_inv_json);
-            nlapiLogExecution('DEBUG', 'JSON String In Search', consol_inv_json);
+            nlapiLogExecution('DEBUG', 'JSON String In Search', JSON.stringify(consol_inv_json));
             // nlapiSubmitRecord(consolRecord);
 
             return true;
         });
 
-        nlapiLogExecution('DEBUG', 'JSON String', consol_inv_json);
+        // nlapiLogExecution('DEBUG', 'JSON String', JSON.stringify(consol_inv_json));
         
-        consol_inv_line_item = [{
-            id: '12345',
-            state: 'WA',
-            location: 'Perth',
-            type: 'Service',
-            item: 'Counter Banking',
-            details: 'Please Bill Monthly',
-            ref: '1',
-            qty: '9',
-            rate: '$20.00',
-            amount: '$20.00',
-            gst: '$2.00',
-            gross: '$22.00'
-        },
-        {
-            id: '56789',
-            state: 'NSW',
-            location: 'Sydney',
-            type: 'Product',
-            item: 'Counter Banking',
-            details: 'Bill Weekly',
-            ref: '2',
-            qty: '18',
-            rate: '$45.00',
-            amount: '$23.00',
-            gst: '$5.00',
-            gross: '$8.00'
-        },
-        {
-            id: '00000',
-            state: 'QLD',
-            location: 'Brisbane',
-            type: 'Product',
-            item: 'Counter Banking',
-            details: 'Bill Weekly',
-            ref: '2',
-            qty: '18',
-            rate: '$45.00',
-            amount: '$23.00',
-            gst: '$5.00',
-            gross: '$8.00'
-        }];
-        consol_inv_json = [{
-            date: '10/05/2021',
-            inv_code: 'INV894288',
-            due_date: '30/05/2021',
-            abn: '123456789',
-            po_box: '2020',
-            service_from: '1/05/2021',
-            service_to: '30/05/2021',
-            terms: 'NET15',
-            companyname: 'Secure Cash - NSW Parent : SC - PETStock - Mt Annan',
-            billaddress: '320 Narellan Rd, Mount Annan NSW 2567',
-            lineitem: consol_inv_line_item
-        }];
+        // consol_inv_line_item = [{
+        //     id: '12345',
+        //     state: 'WA',
+        //     location: 'Perth',
+        //     type: 'Service',
+        //     item: 'Counter Banking',
+        //     details: 'Please Bill Monthly',
+        //     ref: '1',
+        //     qty: '9',
+        //     rate: '$20.00',
+        //     amount: '$20.00',
+        //     gst: '$2.00',
+        //     gross: '$22.00'
+        // },
+        // {
+        //     id: '56789',
+        //     state: 'NSW',
+        //     location: 'Sydney',
+        //     type: 'Product',
+        //     item: 'Counter Banking',
+        //     details: 'Bill Weekly',
+        //     ref: '2',
+        //     qty: '18',
+        //     rate: '$45.00',
+        //     amount: '$23.00',
+        //     gst: '$5.00',
+        //     gross: '$8.00'
+        // },
+        // {
+        //     id: '00000',
+        //     state: 'QLD',
+        //     location: 'Brisbane',
+        //     type: 'Product',
+        //     item: 'Counter Banking',
+        //     details: 'Bill Weekly',
+        //     ref: '2',
+        //     qty: '18',
+        //     rate: '$45.00',
+        //     amount: '$23.00',
+        //     gst: '$5.00',
+        //     gross: '$8.00'
+        // }];
+        // consol_inv_json = [{
+        //     date: '10/05/2021',
+        //     inv_code: 'INV894288',
+        //     due_date: '30/05/2021',
+        //     abn: '123456789',
+        //     po_box: '2020',
+        //     service_from: '1/05/2021',
+        //     service_to: '30/05/2021',
+        //     terms: 'NET15',
+        //     companyname: 'Secure Cash - NSW Parent : SC - PETStock - Mt Annan',
+        //     billaddress: '320 Narellan Rd, Mount Annan NSW 2567',
+        //     lineitem: consol_inv_line_item
+        // }];
 
         nlapiLogExecution('DEBUG', 'JSON String', consol_inv_json);
 
@@ -349,15 +357,16 @@
                 merge['NLGROSS' + (z + 1)] = json_list.gross;
             }
             
+            var pdf_method_id = 0;
             switch (consol_method) {
-                case 'Branch' : consol_method_id = 312; break;
-                case 'State' : consol_method_id = 301; break;
-                case 'Invoice Type' : consol_method_id = 311; break;
-                case 'Multi-Parent' : consol_method_id = 313; break;
+                case 'Branch' : pdf_method_id = 312; break;
+                case 'State' : pdf_method_id = 301; break;
+                case 'Invoice Type' : pdf_method_id = 311; break;
+                case 'Multi-Parent' : pdf_method_id = 313; break;
             }
             nlapiLogExecution('AUDIT', 'Merge Record', consol_method)
-            var fileSCFORM = nlapiMergeRecord(consol_method_id, 'customer', sub_custid, null, null, merge);
-            fileSCFORM.setName('Consolidation_Invoice_' + consol_method + '_custid' + custid + '_' + getDate() + '.pdf');
+            var fileSCFORM = nlapiMergeRecord(pdf_method_id, 'customer', sub_custid, null, null, merge);
+            fileSCFORM.setName('Consolidation_Invoice_' + consol_method + '_CustomerID_' + custid + '_' + getDate() + '.pdf');
             fileSCFORM.setIsOnline(true);
             fileSCFORM.setFolder(2775794);
             var id = nlapiSubmitFile(fileSCFORM);
@@ -365,25 +374,23 @@
             nlapiLogExecution('AUDIT', 'File ID', id);
         }
     }
+    // function deleteRecords() {
+    //     nlapiLogExecution('DEBUG', 'DELETE STRING ACTIVATED');
+    //     var consolInvSearch = nlapiLoadSearch('customrecord_consol_inv_json', 'customsearch_consol_inv_json')
+    //     consolInvSearch.runSearch().forEachResult(function(result) {
+    //         var index = result.getValue('internalid');
+    //         // if (result.getFieldValue('custrecord_export_run_template') !== 'T') {
+    //             deleteResultRecord(index);
+    //         // }
 
+    //         return true;
+    //     });
+    // }
 
-    function deleteRecords() {
-        nlapiLogExecution('DEBUG', 'DELETE STRING ACTIVATED');
-        var consolInvSearch = nlapiLoadSearch('customrecord_consol_inv_json', 'customsearch_consol_inv_json')
-        consolInvSearch.runSearch().forEachResult(function(result) {
-            var index = result.getValue('internalid');
-            // if (result.getFieldValue('custrecord_export_run_template') !== 'T') {
-                deleteResultRecord(index);
-            // }
-
-            return true;
-        });
-    }
-
-    function deleteResultRecord(index) {           
-        // Deleting a record consumes 4 governance units.
-        nlapiDeleteRecord('customrecord_consol_inv_json', index);
-    }
+    // function deleteResultRecord(index) {           
+    //     // Deleting a record consumes 4 governance units.
+    //     nlapiDeleteRecord('customrecord_consol_inv_json', index);
+    // }
 
     function isNullorEmpty(strVal) {
         return (strVal == null || strVal == '' || strVal == 'null' || strVal == undefined || strVal == 'undefined' || strVal == '- None -');
