@@ -39,9 +39,12 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
     if (runtime.EnvType == "SANDBOX") {
         baseURL = 'https://1048144-sb3.app.netsuite.com';
     }
+
     var role = runtime.getCurrentUser().role;
     var ctx = runtime.getCurrentScript();
     var currRec = currentRecord.get();
+
+    var invDataSet = [];
 
     /**
      * On page initialisation
@@ -190,15 +193,96 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
             // $('#submitter').trigger('click');
 
             $('#downloadPDF').show(); // PDF Download Button
-            $('#downloadExcel').show() // Excel Download Button
+            $('#downloadExcel').show() // Excel Download Button.
 
-            var dataTable = $('#inv_preview').DataTable({
-                data: debtDataSet,
-                pageLength: 1000,
-                order: [[8, 'asc']],
-            })
+            $('#inv_preview').show();
 
-            
+            if (consol_method_id == 1){ // Branch
+                var dataTable = $('#inv_preview').DataTable({
+                    data: invDataSet,
+                    columns: [
+                        { title: 'State' },
+                        { title: 'Location' },
+                        { title: 'Type' },
+                        { title: 'Details' },
+                        { title: 'Ref#' },
+                        { title: 'Qty' },
+                        { title: 'Rate' },
+                        { title: 'Amount' },
+                        { title: 'GST' },
+                        { title: 'Gross' }
+                    ],
+                    columnDefs: [{
+                        
+                    }],
+                });
+            } else if (consol_method_id == 2){ // State
+                var dataTable = $('#inv_preview').DataTable({
+                    data: invDataSet,
+                    columns: [
+                        { title: 'State' },
+                        { title: 'Location' },
+                        { title: 'Type' },
+                        { title: 'Details' },
+                        { title: 'Ref#' },
+                        { title: 'Qty' },
+                        { title: 'Rate' },
+                        { title: 'Amount' },
+                        { title: 'GST' },
+                        { title: 'Gross' }
+                    ],
+                    columnDefs: [{
+                        
+                    }],
+                });
+            } else if (consol_method_id == 3){ // Invoice Type
+                var dataTable = $('#inv_preview').DataTable({
+                    data: invDataSet,
+                    columns: [
+                        { title: 'State' },
+                        { title: 'Location' },
+                        { title: 'Type' },
+                        { title: 'Details' },
+                        { title: 'Ref#' },
+                        { title: 'Qty' },
+                        { title: 'Rate' },
+                        { title: 'Amount' },
+                        { title: 'GST' },
+                        { title: 'Gross' }
+                    ],
+                    columnDefs: [{
+                        
+                    }],
+                });
+            } else if (consol_method_id == 4){ // Multi-Parent
+                var dataTable = $('#inv_preview').DataTable({
+                    data: invDataSet,
+                    columns: [
+                        { title: 'Subparnet' },
+                        { title: 'State' },
+                        { title: 'Location' },
+                        { title: 'Item' },
+                        { title: 'Details' },
+                        { title: 'Ref#' },
+                        { title: 'Qty' },
+                        { title: 'Rate' },
+                        { title: 'Amount' },
+                        { title: 'GST' },
+                        { title: 'Gross' }
+                    ],
+                    columnDefs: [{
+                            targets: [],
+                            className: ''
+                        },
+                        {
+                            targets: [],
+                            className: ''
+                        },
+                    ],
+                });
+            }
+
+            loadInvRecord(date_from, date_to, consol_method_id, period_id, custid);
             
             // $('#generateInvoice').submit();
         });
@@ -232,6 +316,92 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
     //     }); 
     //     window.location.href = upload_url;
     // }
+
+    function loadInvRecord(date_from, date_to, consol_method_id, period_id, custid){
+
+        var invDataSet = JSON.parse(JSON.stringify([]));
+
+        var consolInvSearch = search.load({
+            id: 'customer',
+            type: 'customsearch_consol_inv_custlist'
+        });
+
+        var consolInvSearchFilter = [];
+        consolInvSearchFilter.push(['internalid', search.Operator.IS, custid]);
+        if (consol_method_id = 4){
+            consolInvSearchFilter.push('AND', ['internalid', search.Operator.IS, custid]); 
+            consolInvSearchFilter.push('AND', ['subcustomer.internalid', search.Operator.IS, sub_custid]);
+        }
+        consolInvSearch.filterExpression = consolInvSearchFilter;
+        var consolInvResults = consolInvSearch.run();
+
+        consolInvResults.each(function(searchResult){
+            var custid_search = searchResult.getValue({ name: 'internalid'});
+            var zee_id_search = searchResult.getValue({ name: 'partner'});
+            var consol_method_id = searchResult.getValue({ name: 'custentity_inv_consolidation_mtd', join: 'subCustomer'}) // 2 = State. Therefore 1 = Branch??
+            var company_name = searchResult.getValue({ name: 'companyname'});
+
+            // var amount, gst, gross;
+            var sub_total, tot_GST, total;
+
+            var consolInvItemSearch = search.load({
+                id: 'invoice',
+                type: 'customsearch_consol_inv_lineitem'
+            });
+
+            consolInvItemFilter.push(['customer.internalid', search.Operator.IS, sub_custid])
+            consolInvItemSearch.filter.push(consolInvItemFilter);
+            var consolInvItemResults = consolInvItemSearch.run();
+            console.log('Search = ' + JSON.stringify(consolInvItemResults));
+
+            consolInvItemResults.each(function(line_item){
+
+                var invoice_id = line_item.getValue('internalid');
+
+                /**
+                *  Tax Invoice Header
+                */
+                var date = line_item.getValue('date');
+
+                /**
+                *  Table
+                */
+                var state = line_item.getValue({ name: 'location' });
+                var location = line_item.getValue({ name: 'companyname' });
+                var type = line_item.getValue({ name: 'custbody_inv_type'});
+                var item = line_item.getValue({ name: 'item'});
+                var details = line_item.getValue({ name: 'custcol1'});
+                var ref = line_item.getValue({ name: ''})
+                var qty = line_item.getValue({ name: ''})
+                var rate = line_item.getValue({ name: 'rate'})
+                var amount = line_item.getValue({ name: 'amount'});
+                var gst = line_item.getValue({ name: 'taxamount'});
+                var gross = line_item.getValue({ name: "formulacurrency", formula: '{amount}+{taxamount}'});
+
+
+                sub_total += amount;
+                tot_GST += gst;
+                total += gross;
+
+                invDataSet.push([state, location, type, item, details, ref, qty, rate, amount, gst, gross]);
+                
+                // return true;
+            });
+
+            $('#subTotal').val(sub_total);
+            $('#totGST').val(tot_GST);
+            $('#totalAmount').val(total);
+
+        });
+        
+        var datatable = $('#inv_preview').DataTable();
+        datatable.clear();
+        datatable.rows.add(invDataSet);
+        datatable.draw();
+
+        return true;
+    }
+
 
     function downloadPDF(){
         var file_search = search.load({
