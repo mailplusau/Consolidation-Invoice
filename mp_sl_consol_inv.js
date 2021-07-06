@@ -41,6 +41,8 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 var consol_method;
                 var consol_method_id;
                 var period = 'May 21';
+                var date_from;
+                var date_to;
 
                 if (!isNullorEmpty(params)) {
                     is_params == true;
@@ -51,6 +53,8 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                     sub_custid = parseInt(params.subcustid)
                     sub_subcustid = parseInt(params.subsubcustid)
                     period = params.period;
+                    date_from = params.date_from;
+                    date_to = params.date_to;
 
                 }
 
@@ -94,7 +98,7 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 // Button Color: #FBEA51
                 // Text Color: #103D39
 
-                inlineHtml += '<div class="a" style="width: 100%; background-color: #CFE0CE; padding: 20px; min-height: 100vh; height: 100%; margin-top: -40px">';
+                inlineHtml += '<div class="a" style="width: 100%; background-color: #CFE0CE; padding: 20px; min-height: 100vh; height: 100%; ">'; // margin-top: -40px
                 // inlineHtml += '<h1 style="text-align: center; color: #103D39; display: inline-block; font-size: 22px; font-weight: bold; line-height: 33px; vertical-align: top; margin-bottom: 4px;">Consolidation Invoice</h1>';
                 inlineHtml += '<style>.nav > li.active > a, .nav > li.active > a:focus, .nav > li.active > a:hover { background-color: #379E8F; color: #fff }';
                 inlineHtml += '.nav > li > a, .nav > li > a:focus, .nav > li > a:hover { margin-left: 5px; margin-right: 5px; border: 2px solid #379E8F; color: #379E8F; }';
@@ -122,32 +126,38 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                     displayType: ui.FieldDisplayType.HIDDEN
                 }).defaultValue = custname;
                 
-                
                 inlineHtml += methodDropdownSection();
                 inlineHtml += periodDropdownSection();
+                inlineHtml += dateDropdownSection();
                 
                 // inlineHtml += zeeDropdownSection(zee_id);
-                try {
-                    if (zee_id != 0){
-                        inlineHtml += parentDropdownSection(consol_method_id, zee_id, custid, period);
-                        // inlineHtml += custDropdownSection(consol_method_id, zee_id, custid);
-                    }
-                    
-                } catch(e){
-                    // inlineHtml += errorSection(e);
-                    // console.log(e.message);
-                    log.error({
-                        title: 'Error Message',
-                        details: e.message
-                    })
-                }
+                // try {
+                    /**
+                     *  TESTING
+                     */
+                    custid = 632197;
+                    inlineHtml += parentDropdownSection(consol_method_id, zee_id, custid, period);
+                // } catch(e){
+                //     // inlineHtml += errorSection(e);
+                //     // console.log(e.message);
+                //     log.error({
+                //         title: 'Error Message',
+                //         details: e.message
+                //     })
+                // }
                 // if (consol_method_id = 4){ // 'Multi-Parent'
-                //     inlineHtml += subCustDropdownSection(consol_method, zee_id, custid, sub_custid);
+                //     consol_method_id = 2;
+                //     inlineHtml += custDropdownSection(consol_method_id, zee_id, custid);
+                //     // inlineHtml += subCustDropdownSection(consol_method, zee_id, custid, sub_custid);
                 // }
                 
                 inlineHtml += generateInvoice();
 
                 inlineHtml += dataTable();
+
+                inlineHtml += totalAmount();
+
+                inlineHtml += downloadButtons();
 
                 // inlineHtml += '</div>'
                 inlineHtml += '</div>'
@@ -208,8 +218,32 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                     displayType: ui.FieldDisplayType.HIDDEN
                 }).defaultValue = period;
 
+                form.addField({
+                    id: 'custpage_consol_inv_date_from',
+                    label: 'Date From',
+                    type: ui.FieldType.TEXT
+                }).updateDisplayType({
+                    displayType: ui.FieldDisplayType.HIDDEN
+                }).defaultValue = date_from;
+
+                form.addField({
+                    id: 'custpage_consol_inv_date_to',
+                    label: 'Date To',
+                    type: ui.FieldType.TEXT
+                }).updateDisplayType({
+                    displayType: ui.FieldDisplayType.HIDDEN
+                }).defaultValue = date_to;
+
+                form.addField({
+                    id: 'custpage_table_csv',
+                    label: 'Table CSV',
+                    type: ui.FieldType.TEXT
+                }).updateDisplayType({
+                    displayType: ui.FieldDisplayType.HIDDEN
+                })
+                
                 form.addSubmitButton({
-                    label: 'Generate Consolidation Invoice'
+                    label: ' '
                 });
 
                 form.clientScriptFileId = 4750772; // 4607145
@@ -227,7 +261,9 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                     custscript_consol_inv_zee_id: zee_id,
                     custscript_consol_inv_method: consol_method,
                     custscript_consol_inv_period: period,
-                    custscript_consol_inv_method_id: consol_method_id
+                    custscript_consol_inv_method_id: consol_method_id,
+                    custscript_consol_inv_date_from: date_from,
+                    custscript_consol_inv_date_to: date_to
                 }
                 if (!isNullorEmpty(sub_subcustid)){
                     scriptTask.params.push({custscript_consol_inv_sub_subcustid: sub_subcustid});
@@ -307,7 +343,7 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
          */
          function dataTable() {
             var inlineQty = '<style>table#inv_preview {font-size: 12px;text-align: center;border: none;}.dataTables_wrapper {font-size: 14px;}table#inv_preview th{text-align: center;} .bolded{font-weight: bold;}</style>';
-            inlineQty += '<table id="inv_preview" class="table table-responsive table-striped customer tablesorter hide" style="width: 100%;">';
+            inlineQty += '<table id="inv_preview" class="table table-responsive table-striped customer tablesorter " style="width: 100%;">';
             inlineQty += '<thead style="color: white; background-color: #379E8F;">';
             inlineQty += '<tr class="text-center">';
             inlineQty += '</tr>';
@@ -325,54 +361,18 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             inlineQty += '<div class="input-group"><span style="background-color: #379E8F; color: white;" class="input-group-addon">Period</span></div>';
             inlineQty += '<select id="period_dropdown" class="form-control">';
             inlineQty += '<option></option>';
-
-            // for (var i = 0; i <= 100; i++){
-            //     var i_name = '';
-            //     var i_id = i;
-
-            //     switch (i_id) {
-            //         case 1 : i_name = 'Jan';
-            //         case 2 : i_name = 'Feb';
-            //         case 3 : i_name = 'Mar';
-            //         case 4 : i_name = 'Apr';
-            //         case 5 : i_name = 'May';
-            //         case 6 : i_name = 'Jun';
-            //         case 7 : i_name = 'Jul';
-            //         case 8 : i_name = 'Aug';
-            //         case 9 : i_name = 'Sep';
-            //         case 10 : i_name = 'Oct';
-            //         case 11 : i_name = 'Nov';
-            //         case 12 : i_name = 'Dec';
-            //     }
-                
-            //     for (var y = 2021; y <= 2121; y++){
-            //         i_name += y;
-                    
-            //         if (i_id % 12 == 1){
-            //             switch (i){
-            //                 case 'Jan' : i_id = y;
-            //             }
-            //         }
-
-            //     }
-
-            //     inlineQty += '<option value="'+ i_id +'">' + i_name + '</option>';
-
-            //     return true;
-            // }
-
-            inlineQty += '<option value="1">Jan</option>';
-            inlineQty += '<option value="2">Feb</option>';
-            inlineQty += '<option value="3">Mar</option>';
-            inlineQty += '<option value="4">Apr</option>';
-            inlineQty += '<option value="5">May</option>';
-            inlineQty += '<option value="6">Jun</option>';
-            inlineQty += '<option value="7">Jul</option>';
-            inlineQty += '<option value="8">Aug</option>';
-            inlineQty += '<option value="9">Sep</option>';
-            inlineQty += '<option value="10">Oct</option>';
-            inlineQty += '<option value="11">Nov</option>';
-            inlineQty += '<option value="12">Dec</option>';
+            inlineQty += '<option value="0">Jan</option>';
+            inlineQty += '<option value="1">Feb</option>';
+            inlineQty += '<option value="2">Mar</option>';
+            inlineQty += '<option value="3">Apr</option>';
+            inlineQty += '<option value="4" selected>May</option>';
+            inlineQty += '<option value="5">Jun</option>';
+            inlineQty += '<option value="6">Jul</option>';
+            inlineQty += '<option value="7">Aug</option>';
+            inlineQty += '<option value="8">Sep</option>';
+            inlineQty += '<option value="9">Oct</option>';
+            inlineQty += '<option value="10">Nov</option>';
+            inlineQty += '<option value="11">Dec</option>';
             inlineQty += '</select>';
             inlineQty += '</div></div>';
 
@@ -389,6 +389,26 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             inlineQty += '<option value="3">Invoice Type</option>';
             inlineQty += '<option value="4">Multi-Parent</option>';
             inlineQty += '</select>';
+            inlineQty += '</div></div>';
+
+            return inlineQty;
+        }
+
+        function dateDropdownSection(){
+            var inlineQty = '<div class="form-group container date_filter_section">';
+            inlineQty += '<div class="row">';
+            // Date from field
+            inlineQty += '<div class="col-xs-6 date_from">';
+            inlineQty += '<div class="input-group">';
+            inlineQty += '<span class="input-group-addon" style="background-color: #379E8F; color: white;" id="date_from_text">From</span>';
+            inlineQty += '<input id="date_from" class="form-control date_from" type="date" disabled/>';
+            inlineQty += '</div></div>';
+            // Date to field
+            inlineQty += '<div class="col-xs-6 date_to">';
+            inlineQty += '<div class="input-group">';
+            inlineQty += '<span class="input-group-addon" style="background-color: #379E8F; color: white;" id="date_to_text">To</span>';
+            inlineQty += '<input id="date_to" class="form-control date_to" type="date" disabled>';
+            inlineQty += '</div></div>'
             inlineQty += '</div></div>';
 
             return inlineQty;
@@ -429,21 +449,21 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             inlineQty += '<div class="col-xs-6">';
             inlineQty += '<div class="input-group"><span style="background-color: #379E8F; color: white;" class="input-group-addon">Parent</span></div>';
             inlineQty += '<select id="parent_dropdown" class="form-control">';
-            // inlineQty += '<option></option>';
+            inlineQty += '<option></option>';
 
             var customerSearch = search.load({
                 id: 'customsearch_consol_inv_custlist',
                 type: 'customer'
             })
-            if (zee_id != 0){
-                customerSearch.filters.push(search.createFilter({
-                    name: 'partner',
-                    operator: search.Operator.IS,
-                    join: 'subCustomer',
-                    values: zee_id
-                }));
-            }
-            if (custid != 0){
+            // if (!isNaN(zee_id)){
+            //     customerSearch.filters.push(search.createFilter({
+            //         name: 'partner',
+            //         operator: search.Operator.IS,
+            //         join: 'subCustomer',
+            //         values: zee_id
+            //     }));
+            // }
+            if (!isNaN(custid)){
                 customerSearch.filters.push(search.createFilter({
                     name: 'internalid',
                     operator: search.Operator.IS,
@@ -491,15 +511,15 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 id: 'customsearch_consol_inv_custlist',
                 type: 'customer'
             })
-            if (zee_id != 0){
-                customerSearch.filters.push(search.createFilter({
-                    name: 'partner',
-                    operator: search.Operator.IS,
-                    join: 'subCustomer',
-                    values: zee_id
-                }));
-            }
-            if (custid != 0){
+            // if (zee_id != 0){
+            //     customerSearch.filters.push(search.createFilter({
+            //         name: 'partner',
+            //         operator: search.Operator.IS,
+            //         join: 'subCustomer',
+            //         values: zee_id
+            //     }));
+            // }
+            if (custid != 0 || !isNullorEmpty(custid) || !isNaN(custid)){
                 customerSearch.filters.push(search.createFilter({
                     name: 'internalid',
                     operator: search.Operator.IS,
@@ -629,10 +649,55 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             // inlineQty += '<h2 id="fileLoading" class="color--primary-1 page-header-text" style="margin-bottom: 20px !important; text-align: center; color: #379e8f !important; font-size: 40px !important;"><strong>File is Still Loading...</strong></h2>';
             inlineQty += '<h2 id="fileReady" class="color--primary-1 page-header-text" style="margin-bottom: 20px !important; text-align: center; color: #379e8f !important; font-size: 40px !important;"><strong>File is Ready to be Downloaded</strong></h2>'
 
-            inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="downloadPDF" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit" onclick"loadpdf()">Download PDF</button>';
+            inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="download" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit" onclick="loadpdf()">Download PDF</button>';
+
             inlineQty += '</div>';
             inlineQty += '</div>';
             inlineQty += '';
+            
+
+            return inlineQty;
+        }
+
+        function downloadButtons(){
+            var inlineQty = '<div class="form-group container generateInvoiceSection" style="text-align:center">';
+            inlineQty += '<div class="row">'
+            inlineQty += '<div class="col-xs-6">';
+            inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="downloadPDF" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit hide">Download PDF</button>';
+            inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="downloadExcel" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit hide">Download Excel</button>';
+            inlineQty += '</div>';
+            inlineQty += '</div>';
+            inlineQty += '';
+            
+
+            return inlineQty;
+        }
+
+        function totalAmount(){
+            var inlineQty = '<div class="form-group container generateInvoiceSection hide" style="text-align:center">';
+            inlineQty += '<div class="row">'
+
+            inlineQty += '<div class="col-xs-3" >';
+            inlineQty += '<div class="input-group"><span style="background-color: #379E8F; color: white;" class="input-group-addon">Sub Total</span>';
+            inlineQty += '<input class="form-control" type="text">';
+            inlineQty += '</div>';
+            inlineQty += '</div>';
+
+            inlineQty += '<div class="col-xs-3" >';
+            inlineQty += '<div class="input-group"><span style="background-color: #379E8F; color: white;" class="input-group-addon">Total GST</span>';
+            inlineQty += '<input class="form-control" type="text">';
+            inlineQty += '</div>';
+            inlineQty += '</div>';
+
+            inlineQty += '<div class="col-xs-3" >';
+            inlineQty += '<div class="input-group">';
+            inlineQty += '<span style="background-color: #379E8F; color: white;" class="input-group-addon">Total Amount</span>';
+            inlineQty += '<input class="form-control" type="text" placeholder="$">';
+            inlineQty += '</div>';
+            inlineQty += '</div>';
+
+            inlineQty += '</div>';
+            inlineQty += '</div>';
 
             return inlineQty;
         }
@@ -663,8 +728,8 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 a.click();
                 window.URL.revokeObjectURL(url);
 
-                // var file = response.writeFile(pdf, true);
-                // return file;
+                var file = response.writeFile(pdf, true);
+                return file;
             });
 
             

@@ -61,7 +61,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
         $("#NS_MENU_ID0-item0 a").css("background-color", "#CFE0CE");
         $("#body").css("background-color", "#CFE0CE");
 
-        // Hide Netsuite Submit Button
+        // // Hide Netsuite Submit Button
         $('#submitter').css("background-color", "#CFE0CE");
         $('#submitter').hide();
 
@@ -81,9 +81,9 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
         var custid = currRec.getValue({
             fieldId: 'custpage_consol_inv_custid'
         });
-        // var custname = currRec.getValue({
-        //     fieldId: 'custpage_consol_inv_custname'
-        // });
+        var custname = currRec.getValue({
+            fieldId: 'custpage_consol_inv_custname'
+        });
         var sub_custid = currRec.getValue({
             fieldId: 'custpage_consol_inv_sub_custid'
         });
@@ -93,9 +93,16 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
         var zee_id = currRec.getValue({
             fieldId: 'custpage_consol_inv_zee'
         });
-        // var period = currRec.getValue({
-        //     fieldId: 'custpage_consol_inv_period'
-        // });
+        var period = currRec.getValue({
+            fieldId: 'custpage_consol_inv_period'
+        });
+        var date_from = currRec.getValue({
+            fieldId: 'custpage_consol_inv_date_from'
+        });
+
+        var date_to = currRec.getValue({
+            fieldId: 'custpage_consol_inv_date_to'
+        });
 
         consol_method_id = ifIsEmpty(consol_method_id);
         custid = ifIsEmpty(custid);
@@ -108,8 +115,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
         console.log('Zee ID:', zee_id)
         console.log('Consol Method:', consol_method_id)
         // console.log('Period:', period)
-
-        
+       
 
         if(!isNullorEmpty($('#method_dropdown').val())){
             // $('.export_csv').removeClass('hide');
@@ -123,12 +129,66 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
         if (!isNullorEmpty($('#subcust_dropdown').val())){
             $('#subcust_dropdown').val(sub_subcustid);
         }
+        $('#period_dropdown').val(period)
+        
+        var d = new Date();
+        var getFullYear = JSON.stringify(d.getFullYear());
+        
+        // d.toISOString().split('T')[0];
+
+        switch (parseInt($('#period_dropdown').val())){
+            case 0 : date_from = getFullYear + '-01-01'; break;
+            case 1 : date_from = getFullYear + '-02-01'; break;
+            case 2 : date_from = getFullYear + '-03-01'; break;
+            case 3 : date_from = getFullYear + '-04-01'; break;
+            case 4 : date_from = getFullYear + '-05-01'; break;
+            case 5 : date_from = getFullYear + '-06-01'; break;
+            case 6 : date_from = getFullYear + '-07-01'; break;
+            case 7 : date_from = getFullYear + '-08-01'; break;
+            case 8 : date_from = getFullYear + '-09-01'; break;
+            case 9 : date_from = getFullYear + '-10-01'; break;
+            case 10 : date_from = getFullYear + '-11-01'; break;
+            case 11 : date_from = getFullYear + '-12-01'; break;
+            // default : date_from = d.toISOString().split('T')[0]; break;
+        } 
+        switch (parseInt($('#period_dropdown').val())){
+            case 0 : date_to = getFullYear + '-01-31'; break;
+            case 1 : date_to = getFullYear + '-02-31'; break;
+            case 2 : date_to = getFullYear + '-03-31'; break;
+            case 3 : date_to = getFullYear + '-04-31'; break;
+            case 4 : date_to = getFullYear + '-05-31'; break;
+            case 5 : date_to = getFullYear + '-06-31'; break;
+            case 6 : date_to = getFullYear + '-07-31'; break;
+            case 7 : date_to = getFullYear + '-08-31'; break;
+            case 8 : date_to = getFullYear + '-09-31'; break;
+            case 9 : date_to = getFullYear + '-10-31'; break;
+            case 10 : date_to = getFullYear + '-11-31'; break;
+            case 11 : date_to = getFullYear + '-12-31'; break;
+            // default : date_to = d.toISOString().split('T')[0];
+        }
+
+        console.log('Date From ', date_from);
+        console.log('Date To ', date_to);
+
+        $('#date_from').val(date_from);
+        $('#date_to').val(date_to);
+
 
         $(document).on('change', '#method_dropdown', function(){
             consol_method_id = $(this).val();
-            var url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid;
+            var url_link = '&method=' 
+            + consol_method_id  
+            + '&zeeid=' + zee_id 
+            + '&custid=' + custid 
+            + '&subcustid=' + sub_custid 
+            + '&period=' + period;
+
             if (isNullorEmpty(sub_subcustid)){
-                url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&subsubcustid=' + sub_subcustid; 
+                url_link = '&method=' + consol_method_id  
+                + '&zeeid=' + zee_id 
+                + '&custid=' + custid 
+                + '&subcustid=' + sub_custid 
+                + '&subsubcustid=' + sub_subcustid; 
             }
             var upload_url = baseURL + url.resolveScript({
                 deploymentId: 'customdeploy_sl_consol_inv',
@@ -139,7 +199,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
         });
         $(document).on('change', '#zee_dropdown', function(){
             zee_id = $(this).val();
-            var url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid;
+            var url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&period=' + period;
             if (!isNullorEmpty(sub_subcustid)){
                 url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&subsubcustid=' + sub_subcustid; 
             }
@@ -152,7 +212,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
         });
         $(document).on('change', '#parent_dropdown', function(){
             custid = $(this).val();
-            var url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid;
+            var url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&period=' + period;
             if (!isNullorEmpty(sub_subcustid)){
                 url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&subsubcustid=' + sub_subcustid; 
             }
@@ -165,7 +225,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
         });
         $(document).on('change', '#cust_dropdown', function(){
             sub_custid = $(this).val();
-            var url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid;
+            var url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&period=' + period;
             if (!isNullorEmpty(sub_subcustid)){
                 url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&subsubcustid=' + sub_subcustid; 
             }
@@ -177,7 +237,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
         });
         $(document).on('change', '#subcust_dropdown', function(){
             sub_subcustid = $(this).val();
-            var url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid;
+            var url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&period=' + period;
             if (!isNullorEmpty(sub_subcustid)){
                 url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&subsubcustid=' + sub_subcustid; 
             }
@@ -188,12 +248,29 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
             window.location.href = upload_url
         });
 
+        $(document).on('change', '#period_dropdown', function(){
+            period = $(this).val();
+            var url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&period=' + period;
+            if (!isNullorEmpty(sub_subcustid)){
+                url_link = '&method=' + consol_method_id  + '&zeeid=' + zee_id + '&custid=' + custid + '&subcustid=' + sub_custid + '&subsubcustid=' + sub_subcustid; 
+            }
+            var upload_url = baseURL + url.resolveScript({
+                deploymentId: 'customdeploy_sl_consol_inv',
+                scriptId: 'customscript_sl_consol_inv'
+            }) + url_link;
+            window.location.href = upload_url
+        });
+
+        // $(document).on('click', '#downloadExcel', downloadCsv());
+
+        // $('#downloadExcel').click(downloadCsv());
 
         $('#generateInvoice').click(function() {
-            // $('#submitter').trigger('click');
 
-            $('#downloadPDF').show(); // PDF Download Button
-            $('#downloadExcel').show() // Excel Download Button.
+            $('#downloadPDF').removeClass('hide'); // PDF Download Button
+            $('#downloadExcel').removeClass('hide'); // Excel Download Button.
+
+            $('.generateInvoiceSection').removeClass('hide');
 
             $('#inv_preview').show();
 
@@ -258,7 +335,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 var dataTable = $('#inv_preview').DataTable({
                     data: invDataSet,
                     columns: [
-                        { title: 'Subparnet' },
+                        { title: 'SubParent' },
                         { title: 'State' },
                         { title: 'Location' },
                         { title: 'Item' },
@@ -282,15 +359,24 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 });
             }
 
-            loadInvRecord(date_from, date_to, consol_method_id, period_id, custid);
+            loadInvRecord(date_from, date_to, consol_method_id, period, custid, sub_custid);
             
+            // $('#submitter').trigger('click');
+
             // $('#generateInvoice').submit();
         });
 
         $('#downloadPDF').click(function(){
             // var locatePDF = setInterval(downloadPDF, 5000); 
-            downloadPDF();
+            // downloadPDF();
+
+            $('#submitter').trigger('click');
+            // $('#generateInvoice').submit();
         });
+
+        $('#download').click(function(){
+            download();
+        })
 
         $('#downloadExcel').click(function(){
             // var locatePDF = setInterval(downloadPDF, 5000); 
@@ -317,80 +403,108 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
     //     window.location.href = upload_url;
     // }
 
-    function loadInvRecord(date_from, date_to, consol_method_id, period_id, custid){
+    function loadInvRecord(date_from, date_to, consol_method_id, period, custid, sub_custid){
+
+        console.log('Load Record Table');
 
         var invDataSet = JSON.parse(JSON.stringify([]));
 
         var consolInvSearch = search.load({
-            id: 'customer',
-            type: 'customsearch_consol_inv_custlist'
+            type: 'customer',
+            id: 'customsearch_consol_inv_custlist'
         });
-
         var consolInvSearchFilter = [];
-        consolInvSearchFilter.push(['internalid', search.Operator.IS, custid]);
+        consolInvSearchFilter.push(['internalidnumber', search.Operator.EQUALTO, custid]);
+        consolInvSearchFilter.push('AND', ['trandate', search.Operator.ONORAFTER, date_from]);
+        consolInvSearchFilter.push('AND', ['trandate', search.Operator.ONORBEFORE, date_to]);
         if (consol_method_id = 4){
             consolInvSearchFilter.push('AND', ['internalid', search.Operator.IS, custid]); 
             consolInvSearchFilter.push('AND', ['subcustomer.internalid', search.Operator.IS, sub_custid]);
         }
-        consolInvSearch.filterExpression = consolInvSearchFilter;
+        // consolInvSearch.filterExpression = consolInvSearchFilter;
         var consolInvResults = consolInvSearch.run();
+        
+        console.log("Load First Results " + JSON.stringify(consolInvResults));
 
         consolInvResults.each(function(searchResult){
+            console.log('Loaded div');
+
             var custid_search = searchResult.getValue({ name: 'internalid'});
-            var zee_id_search = searchResult.getValue({ name: 'partner'});
-            var consol_method_id = searchResult.getValue({ name: 'custentity_inv_consolidation_mtd', join: 'subCustomer'}) // 2 = State. Therefore 1 = Branch??
+            sub_custid = searchResult.getValue({ name: 'internalid', join: 'subCustomer'});
+            // var consol_method_id = searchResult.getValue({ name: 'custentity_inv_consolidation_mtd', join: 'subCustomer'}) // 2 = State. Therefore 1 = Branch??
             var company_name = searchResult.getValue({ name: 'companyname'});
+
+            console.log('Customer Company Name: ' + company_name, '| Customer ID: ' + custid_search, '| Sub- Customer ID: '+ sub_custid);
 
             // var amount, gst, gross;
             var sub_total, tot_GST, total;
 
             var consolInvItemSearch = search.load({
-                id: 'invoice',
-                type: 'customsearch_consol_inv_lineitem'
+                type: 'invoice',
+                id: 'customsearch_consol_inv_lineitem'
             });
-
+            var consolInvItemFilter = [];
             consolInvItemFilter.push(['customer.internalid', search.Operator.IS, sub_custid])
-            consolInvItemSearch.filter.push(consolInvItemFilter);
+            consolInvItemSearch.filterExpression = consolInvItemFilter;
             var consolInvItemResults = consolInvItemSearch.run();
+
             console.log('Search = ' + JSON.stringify(consolInvItemResults));
 
             consolInvItemResults.each(function(line_item){
 
-                var invoice_id = line_item.getValue('internalid');
+                var invoice_id = line_item.getValue({ name: 'internalid'});
+                var subparent = line_item.getValue({ name: 'internalid', join: 'customer'});
 
                 /**
                 *  Tax Invoice Header
                 */
-                var date = line_item.getValue('date');
+                var date = line_item.getValue({ name: 'date'});
 
                 /**
                 *  Table
                 */
-                var state = line_item.getValue({ name: 'location' });
-                var location = line_item.getValue({ name: 'companyname' });
-                var type = line_item.getValue({ name: 'custbody_inv_type'});
+                var state = line_item.getValue({ name: 'billstate' }); // location
+                var location = line_item.getValue({ name: 'billaddressee' }); // companyname
+                // var type = line_item.getValue({ name: 'custbody_inv_type'});
+                var type = line_item.getValue({ name: 'formulatext', formula: "DECODE({custbody_inv_type},'','Service','AP Products','Product',{custbody_inv_type})"});
+                // if (isNullorEmpty(type)){
+                //     type = 'Service';
+                // }
                 var item = line_item.getValue({ name: 'item'});
                 var details = line_item.getValue({ name: 'custcol1'});
-                var ref = line_item.getValue({ name: ''})
-                var qty = line_item.getValue({ name: ''})
+                var ref = line_item.getValue({ name: 'tranid'})
+                // var ref = '#12';
+                var qty = line_item.getValue({ name: 'quantity'})
+                // var qty = '123'
                 var rate = line_item.getValue({ name: 'rate'})
                 var amount = line_item.getValue({ name: 'amount'});
                 var gst = line_item.getValue({ name: 'taxamount'});
                 var gross = line_item.getValue({ name: "formulacurrency", formula: '{amount}+{taxamount}'});
 
-
-                sub_total += amount;
-                tot_GST += gst;
-                total += gross;
-
-                invDataSet.push([state, location, type, item, details, ref, qty, rate, amount, gst, gross]);
+                if (!isNaN(amount)){
+                    sub_total += parseInt(amount);
+                }
+                console.log('Sub Total: ' + sub_total);
                 
-                // return true;
+                tot_GST += parseInt(gst);
+                total += parseInt(gross);
+
+                if (consol_method_id == 4){
+                    invDataSet.push([subparent, state, location, type, item, details, ref, qty, rate, amount, gst, gross]);
+                } else {
+                    invDataSet.push([state, location, type, item, details, ref, qty, rate, amount, gst, gross]);
+                }
+
+                
+                
+                $('#subTotal').val(sub_total);
+                $('#totGST').val(tot_GST);
+                $('#totalAmount').val(total);
+                
+                return true;
             });
 
-            $('#subTotal').val(sub_total);
-            $('#totGST').val(tot_GST);
-            $('#totalAmount').val(total);
+            
 
         });
         
@@ -399,46 +513,90 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
         datatable.rows.add(invDataSet);
         datatable.draw();
 
+        console.log('Datatable Populated')
+
+        saveCsv(invDataSet);
+
         return true;
     }
 
 
-    function downloadPDF(){
+    function download(){
+        console.log('Download PDF Loaded')
         var file_search = search.load({
             id: 'customsearch_consol_inv_file',
             type: 'file'
         });
-        var fileResult = file_search.run().getRange({start: 0, end: 1});
-        if(!isNullorEmpty(JSON.stringify(fileResult))){
-            // clearInterval(locatePDF);
+        file_search.run().each(function(res){
+            var internalid = res.getValue({ name: 'internalid'});
+            // var pdf = file.load({
+            //     id: internalid
+            // });
+            // var a = document.createElement('a');
+            // document.body.appendChild(a);
+            // a.style = 'display: none';
+            // var content_type = 'text/pdf';
+            // var pdfFile = new Blob([pdf], { type: content_type });
+            // var url = window.URL.createObjectURL(pdfFile);
+            // var filename = 'consolidation_invoice_' + custname + '.pdf';
+            // var filename = 'consolidation_invoice.pdf';
+            // a.href = url;
+            // a.download = filename;
+            // a.click();
+            // window.URL.revokeObjectURL(url);
 
-            fileResult.forEach(function(res){
-                var internalid = res.getValue({ name: 'internalid'});
-                var link = res.getValue({ name: 'url'})
-                // var pdf = file.load({
-                //     id: internalid
-                // });
-                // var a = document.createElement('a');
-                // document.body.appendChild(a);
-                // a.style = 'display: none';
-                // var content_type = 'text/pdf';
-                // var pdfFile = new Blob([pdf], { type: content_type });
-                // var url = window.URL.createObjectURL(pdfFile);
-                // var filename = 'consolidation_invoice_' + custname + '.pdf';
-                // var filename = 'consolidation_invoice.pdf';
-                // a.href = url;
-                // a.download = filename;
-                // a.click();
-                // window.URL.revokeObjectURL(url);
-    
-                $('#fileReady').show();
-                $('#fileLoading').show();
-    
-                window.open(baseURL + link, '_blank');
-            });
-        } else {
-            alert('File Is Not Ready... Please Wait a Few Seconds');
-        }
+            $('#fileReady').hide();
+            $('#fileLoading').show();
+        });
+        
+    }
+
+    function downloadExcel(){
+        downloadCsv();
+    }
+
+    /**
+     * Create the CSV and store it in the hidden field 'custpage_table_csv' as a string.
+     * @param {Array} invDataSet The `invDataSet` created in `loadDatatable()`.
+     */
+    function saveCsv(invDataSet) {
+        var headers = $('inv_preview').DataTable().columns().header().toArray().map(function(x) { return x.innerText });
+        headers = headers.slice(0, headers.length - 1).join(', ');
+        var csv = headers + "\n";
+        invDataSet.forEach(function(row) {
+            // row[0] = $.parseHTML(row[0])[0].text;
+            // row[4] = financialToNumber(row[4]);
+            // row[5] = financialToNumber(row[5]);
+            // row[7] = $.parseHTML(row[7])[0].text;
+            csv += row.join(',');
+            csv += "\n";
+        });
+        currRec.setValue({ fieldId: 'custpage_table_csv', value: csv})
+
+        // downloadCsv(csv);
+
+        return true;
+    }
+
+    /**
+     * Load the string stored in the hidden field 'custpage_table_csv'.
+     * Converts it to a CSV file.
+     * Creates a hidden link to download the file and triggers the click of the link.
+     */
+    function downloadCsv() {
+        // var csv = nlapiGetFieldValue('custpage_table_csv');
+        var csv = currRec.getValue({ fieldId: 'custpage_table_csv'})
+        var a = document.createElement("a");
+        document.body.appendChild(a);
+        a.style = "display: none";
+        var content_type = 'text/csv';
+        var csvFile = new Blob([csv], { type: content_type });
+        var url = window.URL.createObjectURL(csvFile);
+        var filename = 'consolidation_invoice' + '.csv';
+        a.href = url;
+        a.download = filename;
+        a.click();
+        window.URL.revokeObjectURL(url);
     }
 
     function saveRecord(context) {
@@ -450,6 +608,27 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
     function isNullorEmpty(strVal) {
         return (strVal == null || strVal == '' || strVal == 'null' || strVal == undefined || strVal == 'undefined' || strVal == '- None -');
     }
+
+    
+    // /**
+    //  * Used to set the value of the date input fields.
+    //  * @param   {String} date_netsuite  "1/6/2020"
+    //  * @returns {String} date_iso       "2020-06-01"
+    //  */
+    // function dateNetsuiteToISO(date_netsuite) {
+    //     var date_iso = '';
+    //     if (!isNullorEmpty(date_netsuite)) {
+    //         // var date = nlapiStringToDate(date_netsuite);
+
+    //         var date = date_netsuite.split('/');
+    //         var date_day = date.getDate();
+    //         var date_month = date.getMonth();
+    //         var date_year = date.getFullYear();
+    //         var date_utc = new Date(Date.UTC(date_year, date_month, date_day));
+    //         date_iso = date_utc.toISOString().split('T')[0];
+    //     }
+    //     return date_iso;
+    // }
 
     /**
      * [getDate description] - Get the current date

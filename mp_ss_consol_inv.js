@@ -45,7 +45,7 @@
     } else if (role == 1032) { // System Support
         zee = 425904; //test-AR
     }
-    var ctx = getCurrentScript();
+    var ctx = runtime.getCurrentScript();
 
     function main() {
 
@@ -63,14 +63,21 @@
         var sub_custid = ctx.getParameter({
             name: 'custscript_consol_inv_sub_custid'
         });
-        var zee_id = ctx.getParameter({
-            name: 'custscript_consol_inv_zee_id'
-        });
+        // var zee_id = ctx.getParameter({
+        //     name: 'custscript_consol_inv_zee_id'
+        // });
         var consol_method = ctx.getParameter({
             name: 'custscript_consol_inv_method'
         });
         var period = ctx.getParameter({
             name: 'custscript_consol_inv_period'
+        });
+
+        var date_from = ctx.getParameter({
+            name: 'custscript_consol_inv_date_from'
+        });
+        var date_to = ctx.getParameter({
+            name: 'custscript_consol_inv_date_to'
         });
         
 
@@ -78,10 +85,10 @@
             title: 'Customer ID',
             details: custid
         });
-        log.debug({
-            title: 'Franchisee ID',
-            details: zee_id
-        });
+        // log.debug({
+        //     title: 'Franchisee ID',
+        //     details: zee_id
+        // });
 
         var consolInvSearch = search.load({
             type: 'customsearch_consol_inv_custlist',
@@ -91,7 +98,7 @@
             name: 'internalid',
             join: 'subcustomer',
             operator: search.Operator.EQUALTO,
-            values: 712095 // PetStock - Mt Annan
+            // values: 712095 // PetStock - Mt Annan
         }));
         var consolInvResults = consolInvSearch.run();
 
@@ -147,7 +154,7 @@
             })); 
             // consolInvItemSearch.filter.push(search.createFilter({
             //     name: string,
-            //     operator: serach.Operator.ONORBEFORE,
+            //     operator: search.Operator.ONORBEFORE,
             //     values: date_to
             // }));
             // consolInvItemSearch.filter.push(search.createFilter({
