@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <workbook xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <taxinvoice>
+            <date>
+                30/09/2020
+            </date>
+            <invoice>
+                MPAU209
+            </invoice>
+            <duedate>
+                15/10/2020
+            </duedate>
+            <abn>
+                45 609 801 194
+            </abn>
+            <custpo>
+                -
+            </custpo>
+            <servicefrom>
+                1/06/2021
+            </servicefrom>
+            <serviceto>
+                31/06/2021
+            </serviceto>
+        </taxinvoice>
+        <bill_to>
+            <custname>
+                Shine Lawyers
+            </custname>
+            <custaddress>
+                123 George Street
+            </custaddress>
+            <custsuburb>
+                Sydney
+            </custsuburb>
+            <custpost>
+                NSW 2000
+            </custpost>
+        </bill_to>
+        <table>
+            <state>
+                QLD
+            </state>
+            <location>
+                Shine Lawyers - Springwood
+            </location>
+            <type>
+                Service
+            </type>
+            <item>
+                Package: Pickup from PO - DX
+            </item>
+            <details>
+                Lodge Outgoing Mail - DX
+            </details>
+            <ref>
+                INV832724
+            </ref>
+            <qty>
+                1
+            </qty>
+            <rate>
+                251.34
+            </rate>
+            <amount>
+                251.34
+            </amount>
+            <gst>
+                25.13
+            </gst>
+            <gross>
+                276.47
+            </gross>
+        </table>
+    </workbook>

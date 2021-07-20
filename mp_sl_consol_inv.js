@@ -15,8 +15,8 @@
  * 
  */
 
-define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/http', 'N/log', 'N/redirect', 'N/format', 'N/render', 'N/file', 'N/task'],
-    function (ui, email, runtime, search, record, http, log, redirect, format, render, file, task) {
+define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/http', 'N/log', 'N/redirect', 'N/format', 'N/render', 'N/file', 'N/task', 'N/ui/dialog', 'N/encode'],
+    function(ui, email, runtime, search, record, http, log, redirect, format, render, file, task, dialog, encode) {
         var baseURL = 'https://1048144.app.netsuite.com';
         if (runtime.EnvType == "SANDBOX") {
             baseURL = 'https://1048144-sb3.app.netsuite.com';
@@ -47,7 +47,7 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 if (!isNullorEmpty(params)) {
                     is_params == true;
 
-                    consol_method_id = parseInt(params.method) ;
+                    consol_method_id = parseInt(params.method);
                     zee_id = parseInt(params.zeeid);
                     custid = parseInt(params.custid);
                     sub_custid = parseInt(params.subcustid)
@@ -58,17 +58,24 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
 
                 }
 
-                if (!isNullorEmpty(consol_method)){
+                if (!isNullorEmpty(consol_method)) {
                     switch (consol_method_id) {
-                        case '1' : consol_method = 'Branch'; break;
-                        case '2' : consol_method = 'State'; break;
-                        case '3' : consol_method = 'Invoice Type'; break;
-                        case '4' : consol_method = 'Multi-Parent'; break;
-                        default: consol_method = 'State';
+                        case '1':
+                            consol_method = 'Branch';
+                            break;
+                        case '2':
+                            consol_method = 'State';
+                            break;
+                        case '3':
+                            consol_method = 'Invoice Type';
+                            break;
+                        case '4':
+                            consol_method = 'Multi-Parent';
+                            break;
                     }
                 }
-                
-                var form = ui.createForm({title: 'Consolidation Invoice'});
+
+                var form = ui.createForm({ title: 'Consolidation Invoice' });
 
                 // Load jQuery
                 var inlineHtml = '<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ" crossorigin="anonymous"></script>';
@@ -125,32 +132,31 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 }).updateDisplayType({
                     displayType: ui.FieldDisplayType.HIDDEN
                 }).defaultValue = custname;
-                
+
                 inlineHtml += methodDropdownSection();
-                inlineHtml += periodDropdownSection();
                 inlineHtml += dateDropdownSection();
-                
+
                 // inlineHtml += zeeDropdownSection(zee_id);
-                // try {
+                try {
                     /**
                      *  TESTING
                      */
-                    custid = 632197;
+                    // custid = 632197;
                     inlineHtml += parentDropdownSection(consol_method_id, zee_id, custid, period);
-                // } catch(e){
-                //     // inlineHtml += errorSection(e);
-                //     // console.log(e.message);
-                //     log.error({
-                //         title: 'Error Message',
-                //         details: e.message
-                //     })
-                // }
-                // if (consol_method_id = 4){ // 'Multi-Parent'
-                //     consol_method_id = 2;
-                //     inlineHtml += custDropdownSection(consol_method_id, zee_id, custid);
-                //     // inlineHtml += subCustDropdownSection(consol_method, zee_id, custid, sub_custid);
-                // }
-                
+                } catch (e) {
+                    inlineHtml += errorSection(e);
+                    // console.log(e.message);
+                    log.error({
+                        title: 'Error Message',
+                        details: e.message
+                    })
+                }
+                if (consol_method_id == 4) { // 'Multi-Parent'
+                    consol_method_id = 2;
+                    inlineHtml += custDropdownSection(consol_method_id, zee_id, custid);
+                    // inlineHtml += subCustDropdownSection(consol_method, zee_id, custid, sub_custid);
+                }
+
                 inlineHtml += generateInvoice();
 
                 inlineHtml += dataTable();
@@ -159,8 +165,7 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
 
                 inlineHtml += downloadButtons();
 
-                // inlineHtml += '</div>'
-                inlineHtml += '</div>'
+                inlineHtml += '</div>';
 
                 form.addField({
                     id: 'preview_table',
@@ -241,7 +246,7 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 }).updateDisplayType({
                     displayType: ui.FieldDisplayType.HIDDEN
                 })
-                
+
                 form.addSubmitButton({
                     label: ' '
                 });
@@ -251,32 +256,61 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 context.response.writePage(form);
 
             } else {
+                var params = context.request.parameters;
+
+                var consol_method_id = parseInt(context.request.parameters.custpage_consol_inv_method_id);
+                var custid = parseInt(context.request.parameters.custpage_consol_inv_custid);
+                var custname = parseInt(context.request.parameters.custpage_consol_inv_custname);
+                var sub_custid = parseInt(context.request.parameters.custpage_consol_inv_sub_custid);
+                var sub_subcustid = parseInt(context.request.parameters.custpage_consol_inv_sub_subcustid);
+                var zee_id = parseInt(context.request.parameters.custpage_consol_inv_zee);
+                var period = parseInt(context.request.parameters.custpage_consol_inv_period);
+                var date_from = context.request.parameters.custpage_consol_inv_date_from;
+                var date_to = context.request.parameters.custpage_consol_inv_date_to;
+
+                log.debug({
+                    title: 'Parameter: Method ID',
+                    details: consol_method_id
+                });
+
                 // CALL SCHEDULED SCRIPT
-                var scriptTask = task.create({ taskType: task.TaskType.SCHEDULED_SCRIPT });
-                scriptTask.scriptId = 'customscript_ss_consol_inv_1';
-                scriptTask.deploymentId = 'customdeploy_ss_consol_inv_1';
-                scriptTask.params = {
-                    custscript_consol_inv_custid: custid,
-                    custscript_consol_inv_sub_custid: sub_custid,
-                    custscript_consol_inv_zee_id: zee_id,
-                    custscript_consol_inv_method: consol_method,
-                    custscript_consol_inv_period: period,
-                    custscript_consol_inv_method_id: consol_method_id,
-                    custscript_consol_inv_date_from: date_from,
-                    custscript_consol_inv_date_to: date_to
-                }
-                if (!isNullorEmpty(sub_subcustid)){
-                    scriptTask.params.push({custscript_consol_inv_sub_subcustid: sub_subcustid});
-                }
+                var params2 = {
+                        custscript_consol_inv_custid_1: custid,
+                        custscript_consol_inv_zee_id_1: zee_id,
+                        custscript_consol_inv_method_1: consol_method,
+                        custscript_consol_inv_period_1: period,
+                        custscript_consol_inv_method_id_1: consol_method_id,
+                        custscript_consol_inv_date_from_1: date_from,
+                        custscript_consol_inv_date_to_1: date_to
+                    }
+                    // if (!isNullorEmpty(sub_custid)) {
+                    //    params2.push({ custscript_consol_inv_sub_custid_1: sub_custid });
+                    // } else if (!isNullorEmpty(sub_subcustid)) {
+                    //    params2.push({ custscript_consol_inv_sub_subcustid_1: sub_subcustid });
+                    // }
+                var scriptTask = task.create({
+                    taskType: task.TaskType.SCHEDULED_SCRIPT,
+                    scriptId: 'customscript_ss_consol_inv_1',
+                    deploymentId: 'customdeploy_ss_consol_inv_1',
+                    params: params2
+                });
+
                 var ss_id = scriptTask.submit();
                 var myTaskStatus = task.checkStatus({
                     taskId: ss_id
                 });
-
                 log.audit({
                     title: 'Task Status',
                     details: myTaskStatus
                 });
+                log.audit({
+                    title: 'Task Submit: Params',
+                    details: scriptTask.params
+                })
+                log.audit({
+                    title: 'Task Submit: Params Customer ID',
+                    details: scriptTask.params.custscript_consol_inv_custid_1
+                })
 
                 var form = ui.createForm({ title: 'Consolidation - PDF Download' });
 
@@ -308,7 +342,8 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 inlineHtml += '</style>';
 
                 // inlineHtml += progress(myTaskStatus);
-                inlineHtml += downloadPDF();
+                // inlineHtml += loadpdf();
+                inlineHtml += downloadPDF(context);
                 inlineHtml += errorSection();
 
                 inlineHtml += '</div></div>'
@@ -326,13 +361,12 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 //     label: 'Back',
                 //     functionName: 'onClick_Back()'
                 // })
-
                 // form.addResetButton({
                 //     label: 'Reset'
                 // });
 
                 form.clientScriptFileId = 4750772; // 4607145
-                
+
                 context.response.writePage(form);
             }
         }
@@ -341,7 +375,7 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
          * The table that will display the differents invoices linked to the franchisee and the time period.
          * @return  {String}    inlineQty
          */
-         function dataTable() {
+        function dataTable() {
             var inlineQty = '<style>table#inv_preview {font-size: 12px;text-align: center;border: none;}.dataTables_wrapper {font-size: 14px;}table#inv_preview th{text-align: center;} .bolded{font-weight: bold;}</style>';
             inlineQty += '<table id="inv_preview" class="table table-responsive table-striped customer tablesorter " style="width: 100%;">';
             inlineQty += '<thead style="color: white; background-color: #379E8F;">';
@@ -355,10 +389,30 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             return inlineQty;
         }
 
-        function periodDropdownSection() {
-            var inlineQty = '<div class="form-group container periodDropdownSection">';
-            inlineQty += '<div class="col-xs-6 d-flex justify-content-center">';
-            inlineQty += '<div class="input-group"><span style="background-color: #379E8F; color: white;" class="input-group-addon">Period</span></div>';
+        function methodDropdownSection() {
+            var inlineQty = '<div class="form-group container methodDropdownSection style="margin-top: 10px; text-align:center;">';
+            inlineQty += '<div class="row">';
+            inlineQty += '<div class="col-xs-12 heading1"><h4><span class="label label-default col-xs-12" style="background-color: #379E8F; color: white;">Invoice Consolidation Method - Table Filters</span></h4></div>';
+            inlineQty += '</div>';
+            inlineQty += '</div>';
+
+            inlineQty += '<div class="form-group container methodDropdownSection">';
+            inlineQty += '<div class="row">';
+
+            inlineQty += '<div class="col-xs-6 method_section">';
+            inlineQty += '<div class="input-group">';
+            inlineQty += '<span class="input-group-addon" style="background-color: #379E8F; color: white;" id="method_section_text">Method Selection</span>';
+            inlineQty += '<select id="method_dropdown" class="form-control">';
+            inlineQty += '<option value="1">Branch</option>';
+            inlineQty += '<option value="2">State</option>';
+            inlineQty += '<option value="3">Invoice Type</option>';
+            inlineQty += '<option value="4">Multi-Parent</option>';
+            inlineQty += '</select>';
+            inlineQty += '</div></div>';
+
+            inlineQty += '<div class="col-xs-6 period_section">';
+            inlineQty += '<div class="input-group">';
+            inlineQty += '<span style="background-color: #379E8F; color: white;" class="input-group-addon">Period</span>';
             inlineQty += '<select id="period_dropdown" class="form-control">';
             inlineQty += '<option></option>';
             inlineQty += '<option value="0">Jan</option>';
@@ -376,25 +430,14 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             inlineQty += '</select>';
             inlineQty += '</div></div>';
 
-            return inlineQty;
-        }
+            inlineQty += '</div>';
+            inlineQty += '</div>';
 
-        function methodDropdownSection() {
-            var inlineQty = '<div class="form-group container methodDropdownSection style="margin-top: 10px; text-align:center;">';
-            inlineQty += '<div class="col-xs-6 d-flex justify-content-center">';
-            inlineQty += '<div class="input-group"><span style="background-color: #379E8F; color: white;" class="input-group-addon">Invoice Consolidation Method</span></div>';
-            inlineQty += '<select id="method_dropdown" class="form-control">';
-            inlineQty += '<option value="1">Branch</option>';
-            inlineQty += '<option value="2">State</option>';
-            inlineQty += '<option value="3">Invoice Type</option>';
-            inlineQty += '<option value="4">Multi-Parent</option>';
-            inlineQty += '</select>';
-            inlineQty += '</div></div>';
 
             return inlineQty;
         }
 
-        function dateDropdownSection(){
+        function dateDropdownSection() {
             var inlineQty = '<div class="form-group container date_filter_section">';
             inlineQty += '<div class="row">';
             // Date from field
@@ -416,8 +459,10 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
 
         function zeeDropdownSection(zeeid) {
             var inlineQty = '<div class="form-group container zeeDropdown">';
-            inlineQty += '<div class="col-xs-6 d-flex justify-content-center">';
-            inlineQty += '<div class="input-group"><span style="background-color: #379E8F; color: white;" class="input-group-addon">Franchisee</span></div>';
+            inlineQty += '<div class="row col-xs-6" style="left: 25%;">'; //col-xs-6 d-flex justify-content-center
+
+            inlineQty += '<div class="input-group">';
+            inlineQty += '<span style="background-color: #379E8F; color: white;" class="input-group-addon">Franchisee</span>';
             inlineQty += '<select id="zee_dropdown" class="form-control" required>';
             inlineQty += '<option></option>';
             var zeesSearch = search.load({ type: 'partner', id: 'customsearch_smc_franchisee' });
@@ -430,7 +475,7 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             zeesSearchResults.each(function(zeesSearchResult) {
                 var zee_id = zeesSearchResult.getValue({ name: 'internalid', summmary: search.Operator.GROUP });
                 var zee_name = zeesSearchResult.getValue({ name: 'companyname', summmary: search.Operator.GROUP });
-                if (!isNullorEmpty(zeeid)){
+                if (!isNullorEmpty(zeeid)) {
                     inlineQty += '<option value="' + zee_id + '" selected>' + zee_name + '</option>';
                 } else {
                     inlineQty += '<option value="' + zee_id + '">' + zee_name + '</option>';
@@ -439,78 +484,89 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             });
             inlineQty += '</select>';
             inlineQty += '</div>';
-            inlineQty += '</div>';
+
+            inlineQty += '</div></div>';
 
             return inlineQty;
         }
 
         function parentDropdownSection(consol_method_id, zee_id, custid) { // Value = custid
-            var inlineQty = '<div class="form-group container parentDropdownSection">';
-            inlineQty += '<div class="col-xs-6">';
-            inlineQty += '<div class="input-group"><span style="background-color: #379E8F; color: white;" class="input-group-addon">Parent</span></div>';
+            var inlineQty = '<div class="form-group container parentDropdown">';
+            inlineQty += '<div class="row col-xs-6" style="left: 25%;">'; //col-xs-6 d-flex justify-content-center
+
+            inlineQty += '<div class="input-group">';
+            inlineQty += '<span style="background-color: #379E8F; color: white; font-weight: bold;" class="input-group-addon">Parent</span>';
             inlineQty += '<select id="parent_dropdown" class="form-control">';
             inlineQty += '<option></option>';
 
             var customerSearch = search.load({
-                id: 'customsearch_consol_inv_custlist',
-                type: 'customer'
-            })
-            // if (!isNaN(zee_id)){
-            //     customerSearch.filters.push(search.createFilter({
-            //         name: 'partner',
-            //         operator: search.Operator.IS,
-            //         join: 'subCustomer',
-            //         values: zee_id
-            //     }));
+                    id: 'customsearch_consol_inv_custlist',
+                    type: 'customer'
+                })
+                // if (!isNaN(zee_id)){
+                //     customerSearch.filters.push(search.createFilter({
+                //         name: 'partner',
+                //         operator: search.Operator.IS,
+                //         join: 'subCustomer',
+                //         values: zee_id
+                //     }));
+                // }
+                // if (!isNaN(custid)) {
+            customerSearch.filters.push(search.createFilter({
+                name: 'internalid',
+                operator: search.Operator.IS,
+                values: 632197 // Decujba 
+            }));
             // }
-            if (!isNaN(custid)){
-                customerSearch.filters.push(search.createFilter({
-                    name: 'internalid',
-                    operator: search.Operator.IS,
-                    values: custid
-                }));
-            }
-            if (consol_method_id != 0){
+            if (consol_method_id != 0) {
                 customerSearch.filters.push(search.createFilter({
                     name: 'custentity_inv_consolidation_mtd',
-                    operator: search.Operator.ANYOF,
+                    operator: search.Operator.IS,
+                    join: 'subCustomer',
                     values: consol_method_id
                 }));
             }
             var cust_list = [];
-            customerSearch.run().each(function(custResult){
-                var cust_id = custResult.getValue({ name: 'internalid', summary: search.Operator.GROUP });
+            customerSearch.run().each(function(custResult) {
+                var cust_id = custResult.getValue({ name: 'internalid' }); // , summary: search.Operator.GROUP 
+                log.debug({
+                    title: 'GROUPED Cust ID',
+                    details: cust_id
+                })
                 if (cust_list.indexOf(cust_id) == -1) {
                     cust_list.push(cust_id);
 
-                    var cust_name = custResult.getValue({ name: 'companyname'});
-                    if (!isNullorEmpty(custid)){
-                        inlineQty += '<option value="'+ cust_id + '" selected>' + cust_name +'</option>';
+                    var cust_name = custResult.getValue({ name: 'companyname' }); // , summary: search.Operator.GROUP
+                    if (!isNullorEmpty(custid)) {
+                        inlineQty += '<option value="' + cust_id + '" selected>' + cust_name + '</option>';
                     } else {
-                        inlineQty += '<option value="'+ cust_id + '">' + cust_name +'</option>';
+                        inlineQty += '<option value="' + cust_id + '">' + cust_name + '</option>';
                     }
-                    
+
                     return true;
                 }
             });
-            
+
             inlineQty += '</select>';
             inlineQty += '</div>';
-            inlineQty += '</div>';
+
+            inlineQty += '</div></div>';
 
             return inlineQty;
         }
 
         function custDropdownSection(consol_method_id, zee_id, custid, sub_custid, form) { // Value = sub_custid
             var inlineQty = '<div class="form-group container subCustDropdownSection">';
-            inlineQty += '<div class="col-xs-6">';
-            inlineQty += '<div class="input-group"><span style="background-color: #379E8F; color: white;" class="input-group-addon">Customer</span></div>';
+            inlineQty += '<div class="row col-xs-6" style="left: 25%;">'; //col-xs-6 d-flex justify-content-center
+
+            inlineQty += '<div class="input-group">';
+            inlineQty += '<span style="background-color: #379E8F; color: white;" class="input-group-addon">Customer</span></div>';
             inlineQty += '<select id="cust_dropdown" class="form-control">';
 
             var customerSearch = search.load({
                 id: 'customsearch_consol_inv_custlist',
                 type: 'customer'
-            })
+            });
             // if (zee_id != 0){
             //     customerSearch.filters.push(search.createFilter({
             //         name: 'partner',
@@ -519,36 +575,38 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             //         values: zee_id
             //     }));
             // }
-            if (custid != 0 || !isNullorEmpty(custid) || !isNaN(custid)){
-                customerSearch.filters.push(search.createFilter({
-                    name: 'internalid',
-                    operator: search.Operator.IS,
-                    values: custid
-                }));
-            }
-            if (consol_method_id != 0){
-                customerSearch.filters.push(search.createFilter({
-                    name: 'custentity_inv_consolidation_mtd',
-                    operator: search.Operator.ANYOF,
-                    values: consol_method_id
-                }));
-            }
-            
-            customerSearch.run().each(function(custResult){
-                var cust_id = custResult.getValue({ name: 'internalid', join: 'subCustomer'})
-                var cust_name = custResult.getValue({ name: 'companyname', join: 'subCustomer'});
-                if (custid != 0){
-                    inlineQty += '<option value="'+ cust_id + '" selected>' + cust_name +'</option>';
+            // if (custid != 0 || !isNullorEmpty(custid) || !isNaN(custid)) {
+            //     customerSearch.filters.push(search.createFilter({
+            //         name: 'internalid',
+            //         operator: search.Operator.IS,
+            //         values: custid
+            //     }));
+            // }
+            // if (consol_method_id != 0) {
+            //     customerSearch.filters.push(search.createFilter({
+            //         name: 'custentity_inv_consolidation_mtd',
+            //         join: "subCustomer",
+            //         operator: search.Operator.ANYOF,
+            //         values: consol_method_id
+            //     }));
+            // }
+
+            customerSearch.run().each(function(custResult) {
+                var cust_id = custResult.getValue({ name: 'internalid', join: 'subCustomer' })
+                var cust_name = custResult.getValue({ name: 'companyname', join: 'subCustomer' });
+                if (custid != 0) {
+                    inlineQty += '<option value="' + cust_id + '" selected>' + cust_name + '</option>';
                 } else {
-                    inlineQty += '<option value="'+ cust_id + '">' + cust_name +'</option>';
+                    inlineQty += '<option value="' + cust_id + '">' + cust_name + '</option>';
                 }
 
                 return true;
             });
-            
+
             inlineQty += '</select>';
             inlineQty += '</div>';
-            inlineQty += '</div>';
+
+            inlineQty += '</div></div>';
 
             return inlineQty;
         }
@@ -566,7 +624,7 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 id: 'customsearch_consol_inv_custlist',
                 type: 'customer'
             });
-            if (custid != 0){
+            if (custid != 0) {
                 subCustSearch.filters.push(search.createFilter({
                     name: 'internalid',
                     join: 'customer',
@@ -574,37 +632,32 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                     values: custid
                 }));
             }
-            if (consol_method_id != 0){
+            if (consol_method_id != 0) {
                 subCustSearch.filters.push(search.createFilter({
                     name: 'custentity_inv_consolidation_mtd',
                     operator: search.Operator.ANYOF,
                     values: consol_method_id
-                }));  
-            }            
-            subCustSearch.run().each(function(subCustResult){
-                var cust_id = subCustResult.getValue({ name: 'internalid'})
-                var cust_name = subCustResult.getValue({ name: 'companyname'});
-                if (custid){
-                    inlineQty += '<option value="'+ cust_id + '" selected>' + cust_name +'</option>';
+                }));
+            }
+            subCustSearch.run().each(function(subCustResult) {
+                var cust_id = subCustResult.getValue({ name: 'internalid' })
+                var cust_name = subCustResult.getValue({ name: 'companyname' });
+                if (custid) {
+                    inlineQty += '<option value="' + cust_id + '" selected>' + cust_name + '</option>';
                 } else {
-                    inlineQty += '<option value="'+ cust_id + '">' + cust_name +'</option>';
+                    inlineQty += '<option value="' + cust_id + '">' + cust_name + '</option>';
                 }
-                
+
                 return true;
             });
             inlineQty += '</select>';
-            inlineQty += '<>';
-
-
-            inlineQty += '</div>';
-
-            inlineQty += '</div>';
-            inlineQty += '</div>';
+            inlineQty += '</div></div>';
+            inlineQty += '</div></div>';
 
             return inlineQty;
         }
 
-        function progress(taskStatus){
+        function progress(taskStatus) {
             var inlineQty = '<div class="form-group container progressSection" style="text-align:center">';
             inlineQty += '<div class="row">'
 
@@ -616,11 +669,11 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             return inlineQty;
         }
 
-        function errorSection(e){
+        function errorSection(e) {
             var inlineQty = '<div class="form-group container errorSection" style="text-align:center">';
             inlineQty += '<div class="row">'
 
-            inlineQty += '<div class="alert alert-warning alert-dismissible fade show" role="alert"><strong>An Error Has Occured!</strong> You should check in on some of those fields below.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button><h2 class="color--primary-1 page-header-text" style="margin-bottom: 20px !important; text-align: center; color: #379e8f !important; font-size: 40px !important;">'+ e + '</h2></div>'
+            inlineQty += '<div class="alert alert-warning alert-dismissible fade show" role="alert"><strong>An Error Has Occured!</strong> You should check in on some of those fields below.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button><h2 class="color--primary-1 page-header-text" style="margin-bottom: 20px !important; text-align: center;  font-size: 40px !important;">' + e + '</h2></div>' // color: #379e8f !important;
 
             inlineQty += '</div>';
             inlineQty += '</div>';
@@ -632,7 +685,7 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
 
             var inlineQty = '<div class="form-group container generateInvoiceSection" style="text-align:center">';
             inlineQty += '<div class="row">'
-            inlineQty += '<div class="col-xs-6" >';
+            inlineQty += '<div class="col-xs-12" >';
             inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="generateInvoice" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit">Generate Table</button>';
             // inlineQty += '<button style="float: left; margin-left: 10px; margin-right: 5px; background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="updateticketbutton" onclick="">Update Ticket</button>';
             inlineQty += '</div>';
@@ -642,38 +695,43 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             return inlineQty;
         }
 
-        function downloadPDF(){
+        function downloadPDF(context) {
             var inlineQty = '<div class="form-group container generateInvoiceSection" style="text-align:center">';
             inlineQty += '<div class="row">'
-            inlineQty += '<div class="col-xs-6" >';
-            // inlineQty += '<h2 id="fileLoading" class="color--primary-1 page-header-text" style="margin-bottom: 20px !important; text-align: center; color: #379e8f !important; font-size: 40px !important;"><strong>File is Still Loading...</strong></h2>';
+                // inlineQty += '<div class="col-xs-6" >';
+                // inlineQty += '<h2 id="fileLoading" class="color--primary-1 page-header-text" style="margin-bottom: 20px !important; text-align: center; color: #379e8f !important; font-size: 40px !important;"><strong>File is Still Loading...</strong></h2>';
             inlineQty += '<h2 id="fileReady" class="color--primary-1 page-header-text" style="margin-bottom: 20px !important; text-align: center; color: #379e8f !important; font-size: 40px !important;"><strong>File is Ready to be Downloaded</strong></h2>'
 
-            inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="download" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit" onclick="loadpdf()">Download PDF</button>';
+            // inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="download" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit" onclick="' + loadpdf() + '">Download PDF</button>';
+
+            inlineQty += '<br><br>';
+
+            inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="download" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit" onclick="' + loadExcel(context) + '">Download PDF</button>';
 
             inlineQty += '</div>';
             inlineQty += '</div>';
             inlineQty += '';
-            
+
 
             return inlineQty;
         }
 
-        function downloadButtons(){
+        function downloadButtons() {
             var inlineQty = '<div class="form-group container generateInvoiceSection" style="text-align:center">';
             inlineQty += '<div class="row">'
-            inlineQty += '<div class="col-xs-6">';
-            inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="downloadPDF" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit hide">Download PDF</button>';
+                // inlineQty += '<div class="col-xs-6">';
+                // inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="downloadPDF" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit hide">Download PDF</button>';
+                // inlineQty += '<br>';
             inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="downloadExcel" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit hide">Download Excel</button>';
             inlineQty += '</div>';
             inlineQty += '</div>';
             inlineQty += '';
-            
+
 
             return inlineQty;
         }
 
-        function totalAmount(){
+        function totalAmount() {
             var inlineQty = '<div class="form-group container generateInvoiceSection hide" style="text-align:center">';
             inlineQty += '<div class="row">'
 
@@ -702,7 +760,7 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             return inlineQty;
         }
 
-        function loadpdf(){
+        function loadpdf() {
             log.debug({
                 title: 'Button Has Been Clicked'
             });
@@ -710,8 +768,17 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 id: 'customsearch_consol_inv_file',
                 type: 'file'
             });
-            file_search.run().each(function(res){
-                var internalid = res.getValue({ name: 'internalid'});
+            file_search.run().each(function(res) {
+                var internalid = res.getValue({ name: 'internalidnumber' });
+                log.debug({
+                    title: 'File: Internalid Number',
+                    details: internalid
+                });
+                var id = res.getValue({ name: 'internalid' });
+                log.debug({
+                    title: 'File: Internalid',
+                    details: id
+                })
                 var pdf = file.load({
                     id: internalid
                 });
@@ -728,32 +795,89 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 a.click();
                 window.URL.revokeObjectURL(url);
 
-                var file = response.writeFile(pdf, true);
-                return file;
+                var fileLoaded = response.writeFile(pdf, true);
+                return fileLoaded;
             });
-
-            
         }
 
-        // function Create_Pdf_files(recType, recordInternalId) { try { 
-        //     nlapiLogExecution('debug', "Printing " + recType + " Internal ID " + recordInternalId); 
-        //     var transNumber = nlapiLookupField('transaction', recordInternalId, 'transactionnumber'); 
-        //     var fileName = transNumber + '.PDF'; 
-        //     var Pdf_Object = nlapiPrintRecord('TRANSACTION', recordInternalId, 'PDF'); 
-        //     Pdf_Object.setFolder(XXX); 
-        //     Pdf_Object.setName(fileName); 
-        //         nlapiSubmitFile(Pdf_Object); /nlapiSendEmail(XXX,XXX,'This Record Has Been Printed','Test',your_email_address@gmail.com',null)/ 
-        //     } catch (err) { 
-        //         nlapiLogExecution('debug', "Error Printing " + recType + " Internal ID " + recordInternalId, err); 
-        //     } 
-        // }
+        function loadExcel(scriptContext) {
+            // dialog.alert({
+            //     title: "Alert",
+            //     message: "You click this export button!"
+            // });
+
+            // XML content of the file
+            var xmlStr = '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>';
+            xmlStr += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" ';
+            xmlStr += 'xmlns:o="urn:schemas-microsoft-com:office:office" ';
+            xmlStr += 'xmlns:x="urn:schemas-microsoft-com:office:excel" ';
+            xmlStr += 'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" ';
+            xmlStr += 'xmlns:html="http://www.w3.org/TR/REC-html40">';
+            xmlStr += '<Worksheet ss:Name="Sheet1">';
+            xmlStr += '<Table>' +
+                '<Row>' +
+                '<Cell><Data ss:Type="String"> First Header </Data></Cell>' +
+                '<Cell><Data ss:Type="String"> Second Header </Data></Cell>' +
+                '<Cell><Data ss:Type="String"> Third Header </Data></Cell>' +
+                '<Cell><Data ss:Type="String"> Fourth Header </Data></Cell>' +
+                '<Cell><Data ss:Type="String"> Fifth Header </Data></Cell>' +
+                '</Row>';
+            xmlStr += '</Table></Worksheet></Workbook>';
+
+            // Encode Contents
+            var base64EncodedString = encode.convert({
+                string: xmlStr,
+                inputEncoding: encode.Encoding.UTF_8,
+                outputEncoding: encode.Encoding.BASE_64
+            });
+
+            // Create File 
+            var xlsFile = file.create({
+                name: 'TEST.xls',
+                fileType: 'EXCEL',
+                contents: base64EncodedString
+            });
+
+            log.debug({
+                details: "File ID: " + xlsFile
+            });
+
+            var saveFile = xlsFile.folder = 2775794;
+
+            log.debug({
+                title: 'Save File ID:',
+                details: saveFile
+            })
+            var response = scriptContext.response.writeFile({
+                file: xlsFile
+            });
+
+            log.debug({
+                title: 'response',
+                details: response
+            })
+        }
 
         function isNullorEmpty(strVal) {
             return (strVal == null || strVal == '' || strVal == 'null' || strVal == undefined || strVal == 'undefined' || strVal == '- None -');
         }
 
+        /**
+         * [getDate description] - Get the current date
+         * @return {[String]} [description] - return the string date
+         */
+        function getDate() {
+            var date = new Date();
+            date = format.format({
+                value: date,
+                type: format.Type.DATE,
+                timezone: format.Timezone.AUSTRALIA_SYDNEY
+            });
+
+            return date;
+        }
+
         return {
             onRequest: onRequest
         };
-
     });
