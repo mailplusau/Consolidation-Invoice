@@ -28,11 +28,35 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             zee = runtime.getCurrentUser();
         }
 
+        
+
         function onRequest(context) {
             if (context.request.method === 'GET') {
                 var is_params = false;
 
-                var params = context.request.parameters;
+                var params_params = context.request.parameters
+                if (!isNullorEmpty(params_params.custparam_params)){
+                    var params = JSON.parse(context.request.parameters.custparam_params);
+                }
+                
+
+                var date_from = context.request.parameters.custpage_consol_inv_date_from;
+                if (!date_from){
+                    date_from = '';
+                }
+                log.debug({
+                    title: 'date_from',
+                    details: date_from
+                })
+                var date_to = context.request.parameters.custpage_consol_inv_date_to;
+                if (!date_to){
+                    date_to = '';
+                }
+                log.debug({
+                    title: 'date_to',
+                    details: date_to
+                })
+                
                 var zee_id;
                 var custid;
                 var custname = '';
@@ -40,9 +64,10 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 var sub_subcustid;
                 var consol_method;
                 var consol_method_id;
-                var period = 'May 21';
-                var date_from;
-                var date_to;
+                var period = '';
+                // period = 'May 21';
+                // var date_from;
+                // var date_to;
 
                 if (!isNullorEmpty(params)) {
                     is_params == true;
@@ -58,6 +83,10 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
 
                 }
 
+                log.debug({
+                    title: 'consol_method_id',
+                    details: consol_method_id
+                })
                 if (!isNullorEmpty(consol_method)) {
                     switch (consol_method_id) {
                         case '1':
@@ -75,7 +104,7 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                     }
                 }
 
-                var form = ui.createForm({ title: 'Consolidation Invoice' });
+                var form = ui.createForm({ title: ' ' });
 
                 // Load jQuery
                 var inlineHtml = '<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ" crossorigin="anonymous"></script>';
@@ -88,6 +117,13 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 // Load DataTables
                 inlineHtml += '<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">';
                 inlineHtml += '<script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>';
+                inlineHtml += '<script type="text/javascript" charset="utf8" src="//cdn.datatables.net/rowgroup/1.1.3/js/dataTables.rowGroup.min.js"></script> '
+                inlineHtml += '<script type="text/javascript" charset="utf8" src="//cdn.datatables.net/buttons/2.0.0/js/dataTables.buttons.min.js"></script> '
+                inlineHtml += '<script type="text/javascript" charset="utf8" src="//cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script> '
+                inlineHtml += '<script type="text/javascript" charset="utf8" src="//cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script> '
+                inlineHtml += '<script type="text/javascript" charset="utf8" src="//cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script> '
+                inlineHtml += '<script type="text/javascript" charset="utf8" src="//cdn.datatables.net/buttons/2.0.0/js/buttons.html5.min.js"></script> '
+                inlineHtml += '<script type="text/javascript" charset="utf8" src="//cdn.datatables.net/buttons/2.0.0/js/buttons.print.min.js"></script> '
 
                 // Load Bootstrap-Select
                 inlineHtml += '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css">';
@@ -105,15 +141,23 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 // Button Color: #FBEA51
                 // Text Color: #103D39
 
-                inlineHtml += '<div class="a" style="width: 100%; background-color: #CFE0CE; padding: 20px; min-height: 100vh; height: 100%; ">'; // margin-top: -40px
-                // inlineHtml += '<h1 style="text-align: center; color: #103D39; display: inline-block; font-size: 22px; font-weight: bold; line-height: 33px; vertical-align: top; margin-bottom: 4px;">Consolidation Invoice</h1>';
-                inlineHtml += '<style>.nav > li.active > a, .nav > li.active > a:focus, .nav > li.active > a:hover { background-color: #379E8F; color: #fff }';
-                inlineHtml += '.nav > li > a, .nav > li > a:focus, .nav > li > a:hover { margin-left: 5px; margin-right: 5px; border: 2px solid #379E8F; color: #379E8F; }';
-                inlineHtml += '</style>';
+                // inlineHtml += '<div class="a" style="width: 100%; background-color: #CFE0CE; padding: 20px; min-height: 100vh; height: 100%; ">'; // margin-top: -40px
+                // // inlineHtml += '<h1 style="text-align: center; color: #103D39; display: inline-block; font-size: 22px; font-weight: bold; line-height: 33px; vertical-align: top; margin-bottom: 4px;">Consolidation Invoice</h1>';
+                // inlineHtml += '<style>.nav > li.active > a, .nav > li.active > a:focus, .nav > li.active > a:hover { background-color: #379E8F; color: #fff }';
+                // inlineHtml += '.nav > li > a, .nav > li > a:focus, .nav > li > a:hover { margin-left: 5px; margin-right: 5px; border: 2px solid #379E8F; color: #379E8F; }';
+                // inlineHtml += '</style>';
 
-                // Popup Notes Section
-                inlineHtml += '<div id="myModal" class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true"><div class="modal-dialog modal-sm" role="document" style="width :max-content"><div class="modal-content" style="width :max-content; max-width: 900px"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button><h4 class="modal-title panel panel-info" id="exampleModalLabel">Notes Section</h4><br> </div><div class="modal-body"></div><div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div></div></div></div>';
-                inlineHtml += '<div id="myModal2" class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true"><div class="modal-dialog modal-sm" role="document" style="width :max-content"><div class="modal-content" style="width :max-content; max-width: 900px"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button><h4 class="modal-title panel panel-info" id="exampleModalLabel">Snooze Timers</h4><br> </div><div class="modal-body"></div><div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div></div></div></div>';
+                // Define alert window.
+                inlineHtml += '<div class="container" style="margin-top:14px;" hidden><div id="alert" class="alert alert-danger fade in"></div></div>';
+
+                // Define information window.
+                inlineHtml += '<div class="container" hidden><p id="info" class="alert alert-info"></p></div>';
+
+                inlineHtml += '<div style="margin-top: -40px"><br/>';
+
+                // Buttons
+                // inlineHtml += '<button style="margin-left: 10px; margin-right: 5px; background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="new_agreement" onclick="">New Franchisee Agreement</button>';
+                inlineHtml += '<h1 style="font-size: 25px; font-weight: 700; color: #103D39; text-align: center">Consolidation Invoicing</h1>';
 
                 // Click for Instructions
                 // inlineHtml += '<button type="button" class="btn btn-sm btn-info instruction_button" data-toggle="collapse" data-target="#demo">Click for Instructions</button><div id="demo" style="background-color: #CFE0CE !important;border: 1px solid #417ed9;padding: 10px 10px 10px 20px;width:96%;position:absolute" class="collapse"><b><u>IMPORTANT INSTRUCTIONS:</u></b>';
@@ -125,45 +169,38 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 // inlineHtml += '<li><button type="button" class="btn-xs btn-info" disabled><span class="glyphicon glyphicon-time"></span></button> - Click to view Snooze Timers</li><li><button type="button" class="timer-1day form=control btn-xs btn-info" disabled><span class="span_class">1 Day</span></button> - Click to select Snooze duration of invoice from Debt Collections Page.</li>';
                 // inlineHtml += '</li></ul></div>';
 
-                form.addField({
-                    id: 'custpage_consol_inv_custname',
-                    label: 'Customer Name',
-                    type: ui.FieldType.TEXT
-                }).updateDisplayType({
-                    displayType: ui.FieldDisplayType.HIDDEN
-                }).defaultValue = custname;
-
-                inlineHtml += methodDropdownSection();
+                inlineHtml += method_periodDropdownSection();
                 inlineHtml += dateDropdownSection();
-
                 // inlineHtml += zeeDropdownSection(zee_id);
-                try {
-                    /**
-                     *  TESTING
-                     */
-                    // custid = 632197;
-                    inlineHtml += parentDropdownSection(consol_method_id, zee_id, custid, period);
-                } catch (e) {
-                    inlineHtml += errorSection(e);
-                    // console.log(e.message);
-                    log.error({
-                        title: 'Error Message',
-                        details: e.message
-                    })
+                if (!isNullorEmpty(consol_method_id)){
+                    try {
+                        /**
+                         *  TESTING
+                         */
+                        // custid = 632197;
+                        inlineHtml += parentDropdownSection(consol_method_id, zee_id, custid, period);
+                    } catch (e) {
+                        // inlineHtml += errorSection(e);
+                        // console.log(e.message);
+                        log.error({
+                            title: 'Error Message',
+                            details: e.message
+                        });
+                    }
+                    if (consol_method_id == 4) { // 'Multi-Parent'
+                        // consol_method_id = 2;
+                        inlineHtml += custDropdownSection(consol_method_id, zee_id, custid);
+                        // inlineHtml += subCustDropdownSection(consol_method, zee_id, custid, sub_custid);
+                    }
+
+                    inlineHtml += generateInvoice();
+
+                    inlineHtml += dataTable();
+
+                    // inlineHtml += totalAmount();
+
+                    inlineHtml += downloadButtons();
                 }
-                if (consol_method_id == 4) { // 'Multi-Parent'
-                    consol_method_id = 2;
-                    inlineHtml += custDropdownSection(consol_method_id, zee_id, custid);
-                    // inlineHtml += subCustDropdownSection(consol_method, zee_id, custid, sub_custid);
-                }
-
-                inlineHtml += generateInvoice();
-
-                inlineHtml += dataTable();
-
-                inlineHtml += totalAmount();
-
-                inlineHtml += downloadButtons();
 
                 inlineHtml += '</div>';
 
@@ -190,6 +227,14 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 }).updateDisplayType({
                     displayType: ui.FieldDisplayType.HIDDEN
                 }).defaultValue = custid;
+
+                form.addField({
+                    id: 'custpage_consol_inv_custname',
+                    label: 'Customer Name',
+                    type: ui.FieldType.TEXT
+                }).updateDisplayType({
+                    displayType: ui.FieldDisplayType.HIDDEN
+                }).defaultValue = custname;
 
                 form.addField({
                     id: 'custpage_consol_inv_sub_custid',
@@ -260,10 +305,8 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
 
                 var consol_method_id = parseInt(context.request.parameters.custpage_consol_inv_method_id);
                 var custid = parseInt(context.request.parameters.custpage_consol_inv_custid);
-                var custname = parseInt(context.request.parameters.custpage_consol_inv_custname);
                 var sub_custid = parseInt(context.request.parameters.custpage_consol_inv_sub_custid);
-                var sub_subcustid = parseInt(context.request.parameters.custpage_consol_inv_sub_subcustid);
-                var zee_id = parseInt(context.request.parameters.custpage_consol_inv_zee);
+                // var zee_id = parseInt(context.request.parameters.custpage_consol_inv_zee);
                 var period = parseInt(context.request.parameters.custpage_consol_inv_period);
                 var date_from = context.request.parameters.custpage_consol_inv_date_from;
                 var date_to = context.request.parameters.custpage_consol_inv_date_to;
@@ -275,19 +318,13 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
 
                 // CALL SCHEDULED SCRIPT
                 var params2 = {
-                        custscript_consol_inv_custid_1: custid,
-                        custscript_consol_inv_zee_id_1: zee_id,
-                        custscript_consol_inv_method_1: consol_method,
-                        custscript_consol_inv_period_1: period,
-                        custscript_consol_inv_method_id_1: consol_method_id,
-                        custscript_consol_inv_date_from_1: date_from,
-                        custscript_consol_inv_date_to_1: date_to
-                    }
-                    // if (!isNullorEmpty(sub_custid)) {
-                    //    params2.push({ custscript_consol_inv_sub_custid_1: sub_custid });
-                    // } else if (!isNullorEmpty(sub_subcustid)) {
-                    //    params2.push({ custscript_consol_inv_sub_subcustid_1: sub_subcustid });
-                    // }
+                    custscript_consol_inv_custid_1: custid,
+                    custscript_consol_inv_sub_custid_1: sub_custid,
+                    custscript_consol_inv_method_id_1: consol_method_id,
+                    custscript_consol_inv_period_1: period,
+                    custscript_consol_inv_date_from_1: date_from,
+                    custscript_consol_inv_date_to_1: date_to
+                }
                 var scriptTask = task.create({
                     taskType: task.TaskType.SCHEDULED_SCRIPT,
                     scriptId: 'customscript_ss_consol_inv_1',
@@ -344,7 +381,7 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 // inlineHtml += progress(myTaskStatus);
                 // inlineHtml += loadpdf();
                 inlineHtml += downloadPDF(context);
-                inlineHtml += errorSection();
+                inlineHtml += errorSection(e);
 
                 inlineHtml += '</div></div>'
 
@@ -389,10 +426,10 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             return inlineQty;
         }
 
-        function methodDropdownSection() {
+        function method_periodDropdownSection() {
             var inlineQty = '<div class="form-group container methodDropdownSection style="margin-top: 10px; text-align:center;">';
             inlineQty += '<div class="row">';
-            inlineQty += '<div class="col-xs-12 heading1"><h4><span class="label label-default col-xs-12" style="background-color: #379E8F; color: white;">Invoice Consolidation Method - Table Filters</span></h4></div>';
+            inlineQty += '<div class="col-xs-12 heading1"><h4><span class="label label-default col-xs-12" style="background-color: #379E8F; color: white;">Table Filters</span></h4></div>';
             inlineQty += '</div>';
             inlineQty += '</div>';
 
@@ -413,20 +450,20 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             inlineQty += '<div class="col-xs-6 period_section">';
             inlineQty += '<div class="input-group">';
             inlineQty += '<span style="background-color: #379E8F; color: white;" class="input-group-addon">Period</span>';
-            inlineQty += '<select id="period_dropdown" class="form-control">';
-            inlineQty += '<option></option>';
-            inlineQty += '<option value="0">Jan</option>';
-            inlineQty += '<option value="1">Feb</option>';
-            inlineQty += '<option value="2">Mar</option>';
-            inlineQty += '<option value="3">Apr</option>';
-            inlineQty += '<option value="4" selected>May</option>';
-            inlineQty += '<option value="5">Jun</option>';
-            inlineQty += '<option value="6">Jul</option>';
-            inlineQty += '<option value="7">Aug</option>';
-            inlineQty += '<option value="8">Sep</option>';
-            inlineQty += '<option value="9">Oct</option>';
-            inlineQty += '<option value="10">Nov</option>';
-            inlineQty += '<option value="11">Dec</option>';
+            inlineQty += '<select id="period_dropdown" class="form-control" disabled>';
+            inlineQty += '<option selected></option>';
+            inlineQty += '<option value="0" selected>Last Period</option>';
+            inlineQty += '<option value="1">Before Last Period</option>';
+            inlineQty += '<option value="2">3 Months Ago</option>';
+            // inlineQty += '<option value="3">Apr</option>';
+            // inlineQty += '<option value="4">May</option>';
+            // inlineQty += '<option value="5">Jun</option>';
+            // inlineQty += '<option value="6">Jul</option>';
+            // inlineQty += '<option value="7">Aug</option>';
+            // inlineQty += '<option value="8">Sep</option>';
+            // inlineQty += '<option value="9">Oct</option>';
+            // inlineQty += '<option value="10">Nov</option>';
+            // inlineQty += '<option value="11">Dec</option>';
             inlineQty += '</select>';
             inlineQty += '</div></div>';
 
@@ -473,8 +510,8 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 details: JSON.stringify(zeesSearchResults)
             })
             zeesSearchResults.each(function(zeesSearchResult) {
-                var zee_id = zeesSearchResult.getValue({ name: 'internalid', summmary: search.Operator.GROUP });
-                var zee_name = zeesSearchResult.getValue({ name: 'companyname', summmary: search.Operator.GROUP });
+                var zee_id = zeesSearchResult.getValue({ name: 'internalid', summmary: search.Summary.GROUP });
+                var zee_name = zeesSearchResult.getValue({ name: 'companyname', summmary: search.Summary.GROUP });
                 if (!isNullorEmpty(zeeid)) {
                     inlineQty += '<option value="' + zee_id + '" selected>' + zee_name + '</option>';
                 } else {
@@ -500,35 +537,41 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             inlineQty += '<option></option>';
 
             var customerSearch = search.load({
-                    id: 'customsearch_consol_inv_custlist',
-                    type: 'customer'
-                })
-                // if (!isNaN(zee_id)){
-                //     customerSearch.filters.push(search.createFilter({
-                //         name: 'partner',
-                //         operator: search.Operator.IS,
-                //         join: 'subCustomer',
-                //         values: zee_id
-                //     }));
-                // }
-                // if (!isNaN(custid)) {
-            customerSearch.filters.push(search.createFilter({
-                name: 'internalid',
-                operator: search.Operator.IS,
-                values: 632197 // Decujba 
-            }));
+                id: 'customsearch_consol_inv_lineitem',
+                type: 'invoice'
+            })
+            // if (!isNaN(zee_id)){
+            //     customerSearch.filters.push(search.createFilter({
+            //         name: 'partner',
+            //         operator: search.Operator.IS,
+            //         join: 'subCustomer',
+            //         values: zee_id
+            //     }));
             // }
-            if (consol_method_id != 0) {
-                customerSearch.filters.push(search.createFilter({
-                    name: 'custentity_inv_consolidation_mtd',
-                    operator: search.Operator.IS,
-                    join: 'subCustomer',
-                    values: consol_method_id
-                }));
-            }
+            // if (!isNaN(custid)) {
+            // customerSearch.filters.push(search.createFilter({
+            //     name: 'internalid',
+            //     operator: search.Operator.IS,
+            //     values: 632197 // Decujba 
+            // }));
+            // }
+            // if (consol_method_id != 0) {
+            //     customerSearch.filters.push(search.createFilter({
+            //         name: 'custentity_inv_consolidation_mtd',
+            //         operator: search.Operator.IS,
+            //         // join: 'subCustomer',
+            //         values: consol_method_id
+            //     }));
+            // }
             var cust_list = [];
             customerSearch.run().each(function(custResult) {
-                var cust_id = custResult.getValue({ name: 'internalid' }); // , summary: search.Operator.GROUP 
+                // var cust_id = custResult.getValue({ name: 'internalid' }); // , summary: search.Operator.GROUP 
+                var cust_id = line_item.getValue({ name: "internalid", join: "customer" })
+
+                var invoice_id = line_item.getValue({ name: 'internalid' });
+                var subparent = line_item.getValue({ name: 'internalid', join: 'customer' });
+                var company_name = line_item.getValue({ name: "formulatext", formula: "{customer.parent}"});
+
                 log.debug({
                     title: 'GROUPED Cust ID',
                     details: cust_id
@@ -536,12 +579,13 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 if (cust_list.indexOf(cust_id) == -1) {
                     cust_list.push(cust_id);
 
-                    var cust_name = custResult.getValue({ name: 'companyname' }); // , summary: search.Operator.GROUP
-                    if (!isNullorEmpty(custid)) {
-                        inlineQty += '<option value="' + cust_id + '" selected>' + cust_name + '</option>';
-                    } else {
+                    // var cust_name = custResult.getValue({ name: 'companyname' }); // , summary: search.Operator.GROUP
+                    var cust_name = line_item.getValue({ name: "companyname", join: "customer" })
+                    // if (!isNullorEmpty(custid)) {
+                    //     inlineQty += '<option value="' + cust_id + '" selected>' + cust_name + '</option>';
+                    // } else {
                         inlineQty += '<option value="' + cust_id + '">' + cust_name + '</option>';
-                    }
+                    // }
 
                     return true;
                 }
@@ -686,7 +730,7 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             var inlineQty = '<div class="form-group container generateInvoiceSection" style="text-align:center">';
             inlineQty += '<div class="row">'
             inlineQty += '<div class="col-xs-12" >';
-            inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="generateInvoice" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit">Generate Table</button>';
+            inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="generateInvoice" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit" onclick="loadScript()">Generate Table</button>';
             // inlineQty += '<button style="float: left; margin-left: 10px; margin-right: 5px; background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="updateticketbutton" onclick="">Update Ticket</button>';
             inlineQty += '</div>';
             inlineQty += '</div>';
@@ -698,16 +742,12 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
         function downloadPDF(context) {
             var inlineQty = '<div class="form-group container generateInvoiceSection" style="text-align:center">';
             inlineQty += '<div class="row">'
-                // inlineQty += '<div class="col-xs-6" >';
-                // inlineQty += '<h2 id="fileLoading" class="color--primary-1 page-header-text" style="margin-bottom: 20px !important; text-align: center; color: #379e8f !important; font-size: 40px !important;"><strong>File is Still Loading...</strong></h2>';
+            // inlineQty += '<div class="col-xs-6" >';
+            // inlineQty += '<h2 id="fileLoading" class="color--primary-1 page-header-text" style="margin-bottom: 20px !important; text-align: center; color: #379e8f !important; font-size: 40px !important;"><strong>File is Still Loading...</strong></h2>';
             inlineQty += '<h2 id="fileReady" class="color--primary-1 page-header-text" style="margin-bottom: 20px !important; text-align: center; color: #379e8f !important; font-size: 40px !important;"><strong>File is Ready to be Downloaded</strong></h2>'
-
-            // inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="download" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit" onclick="' + loadpdf() + '">Download PDF</button>';
-
             inlineQty += '<br><br>';
-
-            inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="download" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit" onclick="' + loadExcel(context) + '">Download PDF</button>';
-
+            inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="downloadAsPDF" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit" onclick="' + loadpdf() + '">Download PDF</button>';
+            // inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="download" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit" onclick="' + loadExcel(context) + '">Download PDF</button>';
             inlineQty += '</div>';
             inlineQty += '</div>';
             inlineQty += '';
@@ -719,46 +759,41 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
         function downloadButtons() {
             var inlineQty = '<div class="form-group container generateInvoiceSection" style="text-align:center">';
             inlineQty += '<div class="row">'
-                // inlineQty += '<div class="col-xs-6">';
-                // inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="downloadPDF" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit hide">Download PDF</button>';
-                // inlineQty += '<br>';
             inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="downloadExcel" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit hide">Download Excel</button>';
             inlineQty += '</div>';
             inlineQty += '</div>';
             inlineQty += '';
-
-
             return inlineQty;
         }
 
-        function totalAmount() {
-            var inlineQty = '<div class="form-group container generateInvoiceSection hide" style="text-align:center">';
-            inlineQty += '<div class="row">'
+        // function totalAmount() {
+        //     var inlineQty = '<div class="form-group container generateInvoiceSection hide" style="text-align:center">';
+        //     inlineQty += '<div class="row">'
 
-            inlineQty += '<div class="col-xs-3" >';
-            inlineQty += '<div class="input-group"><span style="background-color: #379E8F; color: white;" class="input-group-addon">Sub Total</span>';
-            inlineQty += '<input class="form-control" type="text">';
-            inlineQty += '</div>';
-            inlineQty += '</div>';
+        //     inlineQty += '<div class="col-xs-3" >';
+        //     inlineQty += '<div class="input-group"><span style="background-color: #379E8F; color: white;" class="input-group-addon">Sub Total</span>';
+        //     inlineQty += '<input class="form-control" type="text">';
+        //     inlineQty += '</div>';
+        //     inlineQty += '</div>';
 
-            inlineQty += '<div class="col-xs-3" >';
-            inlineQty += '<div class="input-group"><span style="background-color: #379E8F; color: white;" class="input-group-addon">Total GST</span>';
-            inlineQty += '<input class="form-control" type="text">';
-            inlineQty += '</div>';
-            inlineQty += '</div>';
+        //     inlineQty += '<div class="col-xs-3" >';
+        //     inlineQty += '<div class="input-group"><span style="background-color: #379E8F; color: white;" class="input-group-addon">Total GST</span>';
+        //     inlineQty += '<input class="form-control" type="text">';
+        //     inlineQty += '</div>';
+        //     inlineQty += '</div>';
 
-            inlineQty += '<div class="col-xs-3" >';
-            inlineQty += '<div class="input-group">';
-            inlineQty += '<span style="background-color: #379E8F; color: white;" class="input-group-addon">Total Amount</span>';
-            inlineQty += '<input class="form-control" type="text" placeholder="$">';
-            inlineQty += '</div>';
-            inlineQty += '</div>';
+        //     inlineQty += '<div class="col-xs-3" >';
+        //     inlineQty += '<div class="input-group">';
+        //     inlineQty += '<span style="background-color: #379E8F; color: white;" class="input-group-addon">Total Amount</span>';
+        //     inlineQty += '<input class="form-control" type="text" placeholder="$">';
+        //     inlineQty += '</div>';
+        //     inlineQty += '</div>';
 
-            inlineQty += '</div>';
-            inlineQty += '</div>';
+        //     inlineQty += '</div>';
+        //     inlineQty += '</div>';
 
-            return inlineQty;
-        }
+        //     return inlineQty;
+        // }
 
         function loadpdf() {
             log.debug({
@@ -782,81 +817,69 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 var pdf = file.load({
                     id: internalid
                 });
-                var a = document.createElement('a');
-                document.body.appendChild(a);
-                a.style = 'display: none';
-                var content_type = 'text/pdf';
-                var pdfFile = new Blob([pdf], { type: content_type });
-                var url = window.URL.createObjectURL(pdfFile);
-                var filename = 'consolidation_invoice_' + custname + '.pdf';
-                var filename = 'consolidation_invoice.pdf';
-                a.href = url;
-                a.download = filename;
-                a.click();
-                window.URL.revokeObjectURL(url);
 
                 var fileLoaded = response.writeFile(pdf, true);
                 return fileLoaded;
             });
         }
 
-        function loadExcel(scriptContext) {
-            // dialog.alert({
-            //     title: "Alert",
-            //     message: "You click this export button!"
-            // });
+        // function loadExcel(scriptContext) {
+        //     // dialog.alert({
+        //     //     title: "Alert",
+        //     //     message: "You click this export button!"
+        //     // });
 
-            // XML content of the file
-            var xmlStr = '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>';
-            xmlStr += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" ';
-            xmlStr += 'xmlns:o="urn:schemas-microsoft-com:office:office" ';
-            xmlStr += 'xmlns:x="urn:schemas-microsoft-com:office:excel" ';
-            xmlStr += 'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" ';
-            xmlStr += 'xmlns:html="http://www.w3.org/TR/REC-html40">';
-            xmlStr += '<Worksheet ss:Name="Sheet1">';
-            xmlStr += '<Table>' +
-                '<Row>' +
-                '<Cell><Data ss:Type="String"> First Header </Data></Cell>' +
-                '<Cell><Data ss:Type="String"> Second Header </Data></Cell>' +
-                '<Cell><Data ss:Type="String"> Third Header </Data></Cell>' +
-                '<Cell><Data ss:Type="String"> Fourth Header </Data></Cell>' +
-                '<Cell><Data ss:Type="String"> Fifth Header </Data></Cell>' +
-                '</Row>';
-            xmlStr += '</Table></Worksheet></Workbook>';
+        //     // XML content of the file
+        //     var xmlStr = '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>';
+        //     xmlStr += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" ';
+        //     xmlStr += 'xmlns:o="urn:schemas-microsoft-com:office:office" ';
+        //     xmlStr += 'xmlns:x="urn:schemas-microsoft-com:office:excel" ';
+        //     xmlStr += 'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" ';
+        //     xmlStr += 'xmlns:html="http://www.w3.org/TR/REC-html40">';
+        //     xmlStr += '<Worksheet ss:Name="Sheet1">';
+        //     xmlStr += '<Table>' +
+        //         '<Row>' +
+        //         '<Cell><Data ss:Type="String"> First Header </Data></Cell>' +
+        //         '<Cell><Data ss:Type="String"> Second Header </Data></Cell>' +
+        //         '<Cell><Data ss:Type="String"> Third Header </Data></Cell>' +
+        //         '<Cell><Data ss:Type="String"> Fourth Header </Data></Cell>' +
+        //         '<Cell><Data ss:Type="String"> Fifth Header </Data></Cell>' +
+        //         '</Row>';
+        //     xmlStr += '</Table></Worksheet></Workbook>';
 
-            // Encode Contents
-            var base64EncodedString = encode.convert({
-                string: xmlStr,
-                inputEncoding: encode.Encoding.UTF_8,
-                outputEncoding: encode.Encoding.BASE_64
-            });
+        //     // Encode Contents
+        //     var base64EncodedString = encode.convert({
+        //         string: xmlStr,
+        //         inputEncoding: encode.Encoding.UTF_8,
+        //         outputEncoding: encode.Encoding.BASE_64
+        //     });
 
-            // Create File 
-            var xlsFile = file.create({
-                name: 'TEST.xls',
-                fileType: 'EXCEL',
-                contents: base64EncodedString
-            });
+        //     // Create File 
+        //     var xlsFile = file.create({
+        //         name: 'TEST.xls',
+        //         fileType: 'EXCEL',
+        //         contents: base64EncodedString
+        //     });
 
-            log.debug({
-                details: "File ID: " + xlsFile
-            });
+        //     log.debug({
+        //         details: "File ID: " + xlsFile
+        //     });
 
-            var saveFile = xlsFile.folder = 2775794;
+        //     var saveFile = xlsFile.folder = 2775794;
 
-            log.debug({
-                title: 'Save File ID:',
-                details: saveFile
-            })
-            var response = scriptContext.response.writeFile({
-                file: xlsFile
-            });
+        //     log.debug({
+        //         title: 'Save File ID:',
+        //         details: saveFile
+        //     })
+        //     var response = scriptContext.response.writeFile({
+        //         file: xlsFile
+        //     });
 
-            log.debug({
-                title: 'response',
-                details: response
-            })
-        }
+        //     log.debug({
+        //         title: 'response',
+        //         details: response
+        //     })
+        // }
 
         function isNullorEmpty(strVal) {
             return (strVal == null || strVal == '' || strVal == 'null' || strVal == undefined || strVal == 'undefined' || strVal == '- None -');

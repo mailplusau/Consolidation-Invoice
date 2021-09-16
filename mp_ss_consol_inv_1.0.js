@@ -37,8 +37,8 @@ function main() {
     */
     var custid = parseInt(ctx.getSetting('SCRIPT', 'custscript_consol_inv_custid_1'));
     var sub_custid = ctx.getSetting('SCRIPT', 'custscript_consol_inv_sub_custid_1');
-    var sub_subcustid = ctx.getSetting('SCRIPT', 'custscript_consol_inv_sub_subcustid_1');
-    var zee_id = ctx.getSetting('SCRIPT', 'custscript_consol_inv_zee_id_1');
+    // var sub_subcustid = ctx.getSetting('SCRIPT', 'custscript_consol_inv_sub_subcustid_1');
+    // var zee_id = ctx.getSetting('SCRIPT', 'custscript_consol_inv_zee_id_1');
     var consol_method_id = ctx.getSetting('SCRIPT', 'custscript_consol_inv_method_id_1');
     var period = ctx.getSetting('SCRIPT', 'custscript_consol_inv_period_1');
     var date_from = ctx.getSetting('SCRIPT', 'custscript_consol_inv_date_from_1');
@@ -48,10 +48,10 @@ function main() {
     // zee_id = 3484879;
     custid = 623512; //
     sub_custid = 712095; //
-    sub_subcustid = null;
-    consol_method = 'Branch';
+    // sub_subcustid = null;
+    // consol_method = 'Branch';
     consol_method_id = 1;
-    period = 'Apr 21';
+    // period = 'Apr 21';
 
     switch (consol_method_id) {
         case 1:
@@ -69,8 +69,7 @@ function main() {
     }
 
     var custRecord = nlapiLoadRecord('customer', custid);
-    zee_id = custRecord.getFieldValue('partner');
-
+    var zee_id = custRecord.getFieldValue('partner');
 
     nlapiLogExecution('DEBUG', 'Customer ID', custid);
     nlapiLogExecution('DEBUG', 'Sub Customer ID', sub_custid);
@@ -82,11 +81,13 @@ function main() {
     var consolInvSearch = nlapiLoadSearch('customer', 'customsearch_consol_inv_custlist')
         // var consolInvSearchFilter = [['subcustomer.internalid', 'is', sub_custid]]
     var consolInvSearchFilter = [
-        ['partner', 'is', zee_id], 'AND', ['internalid', 'is', custid]
+        // ['partner', 'is', zee_id], 'AND', ['internalid', 'is', custid]
+        ['entityid', 'is', custid] //['partner', 'is', zee_id], 'AND', 
     ];
     if (consol_method == 'Multi-Parent') {
         consolInvSearchFilter = [
-            ['partner', 'is', zee_id], 'AND', ['internalid', 'is', custid], 'AND' ['subcustomer.internalid', 'is', sub_custid]
+            // ['partner', 'is', zee_id], 'AND', ['internalid', 'is', custid], 'AND' ['subcustomer.internalid', 'is', sub_custid]
+            ['entityid', 'is', custid], 'AND' ['subcustomer.internalid', 'is', sub_custid]
         ];
     }
     consolInvSearch.setFilterExpression(consolInvSearchFilter);
@@ -109,6 +110,8 @@ function main() {
         invoice_id_set = JSON.parse(invoice_id_set);
     }
 
+    // 71166135 Australia Post Hub - NSW Parent
+    
     consolInvResults.forEachResult(function(searchResult) {
         // var custid_search = searchResult.getValue('internalid');
         // var zee_id_search = searchResult.getValue('partner');
@@ -120,13 +123,13 @@ function main() {
         // nlapiLogExecution('DEBUG', 'Consol Method Search', consol_method_search)
 
         var amount, gst, gross;
-        var name = custid + '_' + zee_id + '_' + getDate();
+        var name = custid + '_' + getDate();
 
         var consolRecord = nlapiCreateRecord('customrecord_consol_inv_json');
         consolRecord.setFieldValue('name', name);
         consolRecord.setFieldValue('custrecord_consol_inv_custid', custid);
         consolRecord.setFieldValue('custrecord_consol_inv_sub_custid', sub_custid);
-        consolRecord.setFieldValue('custrecord_consol_inv_zee_id', zee_id);
+        // consolRecord.setFieldValue('custrecord_consol_inv_zee_id', zee_id);
         consolRecord.setFieldValue('custrecord_consol_inv_method', consol_method);
         // consolRecord.setFieldValue('custrecord_consol_inv_period', period);
         if (!isNullorEmpty(sub_subcustid) || sub_subcustid != 0) {
@@ -407,8 +410,6 @@ function main() {
 
     return true;
 }
-
-
 
 // function deleteRecords() {
 //     nlapiLogExecution('DEBUG', 'DELETE STRING ACTIVATED');
