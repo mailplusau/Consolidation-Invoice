@@ -170,28 +170,9 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 // inlineHtml += '</li></ul></div>';
 
                 inlineHtml += method_periodDropdownSection();
-                inlineHtml += dateDropdownSection();
+                // inlineHtml += dateDropdownSection();
                 // inlineHtml += zeeDropdownSection(zee_id);
                 if (!isNullorEmpty(consol_method_id)){
-                    try {
-                        /**
-                         *  TESTING
-                         */
-                        // custid = 632197;
-                        inlineHtml += parentDropdownSection(consol_method_id, zee_id, custid, period);
-                    } catch (e) {
-                        // inlineHtml += errorSection(e);
-                        // console.log(e.message);
-                        log.error({
-                            title: 'Error Message',
-                            details: e.message
-                        });
-                    }
-                    if (consol_method_id == 4) { // 'Multi-Parent'
-                        // consol_method_id = 2;
-                        inlineHtml += custDropdownSection(consol_method_id, zee_id, custid);
-                        // inlineHtml += subCustDropdownSection(consol_method, zee_id, custid, sub_custid);
-                    }
 
                     inlineHtml += generateInvoice();
 
@@ -730,7 +711,7 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
             var inlineQty = '<div class="form-group container generateInvoiceSection" style="text-align:center">';
             inlineQty += '<div class="row">'
             inlineQty += '<div class="col-xs-12" >';
-            inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="generateInvoice" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit" onclick="loadScript()">Generate Table</button>';
+            inlineQty += '<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="generateInvoice" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit">Generate Table</button>';
             // inlineQty += '<button style="float: left; margin-left: 10px; margin-right: 5px; background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="updateticketbutton" onclick="">Update Ticket</button>';
             inlineQty += '</div>';
             inlineQty += '</div>';

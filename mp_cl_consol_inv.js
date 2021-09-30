@@ -34,7 +34,7 @@
 *  1. Generate Invoice
 */
 define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/email', 'N/currentRecord'],
-    function(error, runtime, search, url, record, format, email, currentRecord) {
+    function (error, runtime, search, url, record, format, email, currentRecord) {
         var baseURL = 'https://1048144.app.netsuite.com';
         if (runtime.EnvType == "SANDBOX") {
             baseURL = 'https://1048144-sb3.app.netsuite.com';
@@ -49,6 +49,67 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
         var csvDataSet = [];
 
         var load_record_interval;
+
+        var consol_method_id = currRec.getValue({
+            fieldId: 'custpage_consol_inv_method_id'
+        });
+
+        var consol_method = '';
+        if (!isNullorEmpty(consol_method_id)) {
+            consol_method_id = parseInt(consol_method_id);
+            console.log('Method ID: ' + consol_method_id)
+            switch (consol_method_id) {
+                case 1:
+                    consol_method = 'Branch';
+                    break;
+                case 2:
+                    consol_method = 'State';
+                    break;
+                case 3:
+                    consol_method = 'Invoice Type';
+                    break;
+                case 4:
+                    consol_method = 'Multi-Parent';
+                    break;
+            }
+        }
+        console.log('Method: ' + consol_method)
+        var custid = currRec.getValue({
+            fieldId: 'custpage_consol_inv_custid'
+        });
+        var custname = currRec.getValue({
+            fieldId: 'custpage_consol_inv_custname'
+        });
+        var sub_custid = currRec.getValue({
+            fieldId: 'custpage_consol_inv_sub_custid'
+        });
+        if (!isNullorEmpty(sub_custid)) {
+            sub_custid = parseInt(sub_custid);
+        }
+        var sub_subcustid = currRec.getValue({
+            fieldId: 'custpage_consol_inv_sub_subcustid'
+        });
+        if (!isNullorEmpty(sub_subcustid)) {
+            sub_subcustid = parseInt(sub_subcustid);
+        }
+        var zee_id = currRec.getValue({
+            fieldId: 'custpage_consol_inv_zee'
+        });
+        if (!isNullorEmpty(zee_id)) {
+            zee_id = parseInt(zee_id);
+        }
+        var period = currRec.getValue({
+            fieldId: 'custpage_consol_inv_period'
+        });
+        // if (!isNullorEmpty(period)){
+        //     period = parseInt(period);
+        // }
+        var date_from = currRec.getValue({
+            fieldId: 'custpage_consol_inv_date_from'
+        });
+        var date_to = currRec.getValue({
+            fieldId: 'custpage_consol_inv_date_to'
+        });
 
         /**
          * On page initialisation
@@ -68,54 +129,11 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
             /**
              *  Click for Instructions Section Collapse
              */
-            $('.collapse').on('shown.bs.collapse', function() {
+            $('.collapse').on('shown.bs.collapse', function () {
                 $("#invTypeDropdownSection").css("padding-top", "500px");
             });
-            $('.collapse').on('hide.bs.collapse', function() {
+            $('.collapse').on('hide.bs.collapse', function () {
                 $("#invTypeDropdownSection").css("padding-top", "0px");
-            });
-
-            var consol_method_id = currRec.getValue({
-                fieldId: 'custpage_consol_inv_method_id'
-            });
-            if (!isNullorEmpty(consol_method_id)){
-                consol_method_id = parseInt(consol_method_id);
-            }
-            var custid = currRec.getValue({
-                fieldId: 'custpage_consol_inv_custid'
-            });
-            var custname = currRec.getValue({
-                fieldId: 'custpage_consol_inv_custname'
-            });
-            var sub_custid = currRec.getValue({
-                fieldId: 'custpage_consol_inv_sub_custid'
-            });
-            if (!isNullorEmpty(sub_custid)){
-                sub_custid = parseInt(sub_custid);
-            }
-            var sub_subcustid = currRec.getValue({
-                fieldId: 'custpage_consol_inv_sub_subcustid'
-            });
-            if (!isNullorEmpty(sub_subcustid)){
-                sub_subcustid = parseInt(sub_subcustid);
-            }
-            var zee_id = currRec.getValue({
-                fieldId: 'custpage_consol_inv_zee'
-            });
-            if (!isNullorEmpty(zee_id)){
-                zee_id = parseInt(zee_id);
-            }
-            var period = currRec.getValue({
-                fieldId: 'custpage_consol_inv_period'
-            });
-            // if (!isNullorEmpty(period)){
-            //     period = parseInt(period);
-            // }
-            var date_from = currRec.getValue({
-                fieldId: 'custpage_consol_inv_date_from'
-            });
-            var date_to = currRec.getValue({
-                fieldId: 'custpage_consol_inv_date_to'
             });
 
             //  consol_method_id = ifIsEmpty(consol_method_id);
@@ -146,359 +164,39 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
             var d = new Date();
             var getFullYear = JSON.stringify(d.getFullYear());
             var getMonth = d.getMonth();
-            // switch (parseInt($('#period_dropdown').val())) {
-            //     case 0:
-            //         if (getMonth != 0){
-            //             var timestamp = new Date();
-            //             timestamp = timestamp.setMonth(0);
-            //             if (timestamp < d){
-            //                 // var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //                 var getFullYearPeriod = getFullYear;
-            //             }
-            //         }
-            //         date_from = getFullYearPeriod + '-01-01';
-            //         break;
-            //     case 1:
-            //         if (getMonth != 1){
-            //             var timestamp = new Date();
-            //             timestamp = timestamp.setMonth(1);
-            //             if (timestamp < d){
-            //                 // var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //                 var getFullYearPeriod = getFullYear;
-            //             }
-            //         }
-            //         date_from = getFullYearPeriod + '-02-01';
-            //         break;
-            //     case 2:
-            //         if (getMonth != 2){
-            //             var timestamp = new Date();
-            //             timestamp = timestamp.setMonth(2);
-            //             if (timestamp < d){
-            //                 // var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //                 var getFullYearPeriod = getFullYear;
-            //             }
-            //         }
-            //         date_from = getFullYearPeriod + '-03-01';
-            //         break;
-            //     case 3:
-            //         if (getMonth != 3){
-            //             var timestamp = new Date();
-            //             timestamp = timestamp.setMonth(3);
-            //             if (timestamp < d){
-            //                 // var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //                 var getFullYearPeriod = getFullYear;
-            //             }
-            //         }
-            //         date_from = getFullYearPeriod + '-04-01';
-            //         break;
-            //     case 4:
-            //         if (getMonth != 4){
-            //             var timestamp = new Date();
-            //             timestamp = timestamp.setMonth(4);
-            //             if (timestamp < d){
-            //                 // var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //                 var getFullYearPeriod = getFullYear;
-            //             }
-            //         }
-            //         date_from = getFullYearPeriod + '-05-01';
-            //         break;
-            //     case 5:
-            //         if (getMonth != 5){
-            //             var timestamp = new Date();
-            //             timestamp = timestamp.setMonth(5);
-            //             if (timestamp < d){
-            //                 // var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //                 var getFullYearPeriod = getFullYear;
-            //             }
-            //         }
-            //         date_from = getFullYear + '-06-01';
-            //         break;
-            //     case 6:
-            //         if (getMonth != 6){
-            //             var timestamp = new Date();
-            //             timestamp = timestamp.setMonth(6);
-            //             if (timestamp < d){
-            //                 // var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //                 var getFullYearPeriod = getFullYear;
-            //             }
-            //         }
-            //         date_from = getFullYearPeriod + '-07-01';
-            //         break;
-            //     case 7:
-            //         if (getMonth != 7){
-            //             var timestamp = new Date();
-            //             timestamp = timestamp.setMonth(7);
-            //             if (timestamp < d){
-            //                 // var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //                 var getFullYearPeriod = getFullYear;
-            //             }
-            //         }
-            //         date_from = getFullYearPeriod + '-08-01';
-            //         break;
-            //     case 8:
-            //         if (getMonth != 8){
-            //             var timestamp = new Date();
-            //             timestamp = timestamp.setMonth(8);
-            //             if (timestamp < d){
-            //                 // var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //                 var getFullYearPeriod = getFullYear;
-            //             }
-            //         }
-            //         date_from = getFullYearPeriod + '-09-01';
-            //         break;
-            //     case 9:
-            //         if (getMonth != 9){
-            //             var timestamp = new Date();
-            //             timestamp = timestamp.setMonth(9);
-            //             if (timestamp < d){
-            //                 // var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //                 var getFullYearPeriod = getFullYear;
-            //             }
-            //         }
-            //         date_from = getFullYearPeriod + '-10-01';
-            //         break;
-            //     case 10:
-            //         if (getMonth != 10){
-            //             var timestamp = new Date();
-            //             timestamp = timestamp.setMonth(10);
-            //             if (timestamp < d){
-            //                 // var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //                 var getFullYearPeriod = getFullYear;
-            //             }
-            //         }
-            //         date_from = getFullYearPeriod + '-11-01';
-            //         break;
-            //     case 11:
-            //         if (getMonth != 11){
-            //             var timestamp = new Date();
-            //             timestamp = timestamp.setMonth(11);
-            //             if (timestamp < d){
-            //                 // var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //                 var getFullYearPeriod = getFullYear;
-            //             }
-            //         }
-            //         date_from = getFullYearPeriod + '-12-01';
-            //         break;
-            //         // default : date_from = d.toISOString().split('T')[0]; break;
-            // }
-            // switch (parseInt($('#period_dropdown').val())) {
-            //     case 0:
-            //         // if (getMonth != 0){
-            //         //     var timestamp = new Date();
-            //         //     timestamp = timestamp.setMonth(0);
-            //         //     if (timestamp < d){
-            //                 var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //         var getFullYearPeriod = getFullYear
-            //         //     }
-            //         // }
-            //         // else {
-            //             var getFullYearPeriod = getFullYear;
-            //         // }
-            //         var end_date = new Date(getFullYearPeriod, 0 + 1, 0);
-            //             end_date = JSON.stringify(end_date.getDate());
-            //             date_to = getFullYearPeriod + '-0'+ JSON.stringify(1) +'-' + end_date;
-            //             // console.log('Switch Case Val' + date_to)
-            //         break;
-            //     case 1:
-            //         // if (getMonth != 1){
-            //         //     var timestamp = new Date();
-            //         //     timestamp = timestamp.setMonth(1);
-            //         //     if (timestamp < d){
-            //                 var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //         var getFullYearPeriod = getFullYear
-            //         //     }
-            //         // }
-            //         var getFullYearPeriod = getFullYear;
-            //         var end_date = new Date(getFullYearPeriod, 1 + 1, 0);
-            //             end_date = JSON.stringify(end_date.getDate());
-            //             date_to = getFullYearPeriod + '-0'+ JSON.stringify(2) +'-' + end_date;
-            //             // console.log('Switch Case Val' + date_to)
-            //         break;
-            //     case 2:
-            //         // if (getMonth != 2){
-            //         //     var timestamp = new Date();
-            //         //     timestamp = timestamp.setMonth(2);
-            //         //     if (timestamp < d){
-            //                 var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //         var getFullYearPeriod = getFullYear
-            //         //     }
-            //         // }
-            //         var getFullYearPeriod = getFullYear;
-            //         var end_date = new Date(getFullYearPeriod, 2 + 1, 0);
-            //             end_date = JSON.stringify(end_date.getDate());
-            //             date_to = getFullYearPeriod + '-0'+ JSON.stringify(3) +'-' + end_date;
-            //             // console.log('Switch Case Val' + date_to)
-            //         break;
-            //     case 3:
-            //         // if (getMonth != 3){
-            //         //     var timestamp = new Date();
-            //         //     timestamp = timestamp.setMonth(3);
-            //         //     if (timestamp < d){
-            //                 var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //         var getFullYearPeriod = getFullYear
-            //         //     }
-            //         // }
-            //         var getFullYearPeriod = getFullYear;
-            //         var end_date = new Date(getFullYearPeriod, 3 + 1, 0);
-            //             end_date = JSON.stringify(end_date.getDate());
-            //             date_to = getFullYearPeriod + '-0'+ JSON.stringify(4) +'-' + end_date;
-            //             // console.log('Switch Case Val' + date_to)
-            //         break;
-            //     case 4:
-            //         // if (getMonth != 4){
-            //         //     var timestamp = new Date();
-            //         //     timestamp = timestamp.setMonth(4);
-            //         //     if (timestamp < d){
-            //                 var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //         var getFullYearPeriod = getFullYear
-            //         //     }
-            //         // }
-            //         var getFullYearPeriod = getFullYear;
-            //         var end_date = new Date(getFullYearPeriod, 4 + 1, 0);
-            //             end_date = JSON.stringify(end_date.getDate());
-            //             date_to = getFullYearPeriod + '-0'+ JSON.stringify(5) +'-' + end_date;
-            //             // console.log('Switch Case Val' + date_to)
-            //         break;
-            //     case 5:
-            //         // if (getMonth != 5){
-            //         //     var timestamp = new Date();
-            //         //     timestamp = timestamp.setMonth(5);
-            //         //     if (timestamp < d){
-            //                 var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //         var getFullYearPeriod = getFullYear
-            //         //     }
-            //         // }
-            //         var getFullYearPeriod = getFullYear;
-            //         var end_date = new Date(getFullYearPeriod, 5 + 1, 0);
-            //             end_date = JSON.stringify(end_date.getDate());
-            //             date_to = getFullYearPeriod + '-0'+ JSON.stringify(6) +'-' + end_date;
-            //             // console.log('Switch Case Val' + date_to)
-            //         break;
-            //     case 6:
-            //         // if (getMonth != 6){
-            //         //     var timestamp = new Date();
-            //         //     timestamp = timestamp.setMonth(6);
-            //         //     if (timestamp < d){
-            //                 var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //         var getFullYearPeriod = getFullYear
-            //         //     }
-            //         // }
-            //         var getFullYearPeriod = getFullYear;
-            //         var end_date = new Date(getFullYearPeriod, 6 + 1, 0);
-            //             end_date = JSON.stringify(end_date.getDate());
-            //             date_to = getFullYearPeriod + '-0'+ JSON.stringify(7) +'-' + end_date;
-            //             // console.log('Switch Case Val' + date_to)
-            //         break;
-            //     case 7:
-            //         // if (getMonth != 7){
-            //         //     var timestamp = new Date();
-            //         //     timestamp = timestamp.setMonth(7);
-            //         //     if (timestamp < d){
-            //                 var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //         var getFullYearPeriod = getFullYear
-            //         //     }
-            //         // }
-            //         var getFullYearPeriod = getFullYear;
-            //         var end_date = new Date(getFullYearPeriod, 7 + 1, 0);
-            //             end_date = JSON.stringify(end_date.getDate());
-            //             date_to = getFullYearPeriod + '-0'+ JSON.stringify(8) +'-' + end_date;
-            //             // console.log('Switch Case Val' + date_to)
-            //         break;
-            //     case 8:
-            //         // if (getMonth != 8){
-            //         //     var timestamp = new Date();
-            //         //     timestamp = timestamp.setMonth(8);
-            //         //     if (timestamp < d){
-            //                 var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //         var getFullYearPeriod = getFullYear
-            //         //     }
-            //         // }
-            //         var getFullYearPeriod = getFullYear;
-            //         var end_date = new Date(getFullYearPeriod, 8 + 1, 0);
-            //             end_date = JSON.stringify(end_date.getDate());
-            //             date_to = getFullYearPeriod + '-0'+ JSON.stringify(9) +'-' + end_date;
-            //             // console.log('Switch Case Val' + date_to)
-            //         break;
-            //     case 9:
-            //         // if (getMonth != 9){
-            //         //     var timestamp = new Date();
-            //         //     timestamp = timestamp.setMonth(9);
-            //         //     if (timestamp < d){
-            //                 var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //         var getFullYearPeriod = getFullYear
-            //         //     }
-            //         // }
-            //         var getFullYearPeriod = getFullYear;
-            //         var end_date = new Date(getFullYearPeriod, 9 + 1, 0);
-            //             end_date = JSON.stringify(end_date.getDate());
-            //             date_to = getFullYearPeriod + '-0'+ JSON.stringify(10) +'-' + end_date;
-            //             // console.log('Switch Case Val' + date_to)
-            //         break;
-            //     case 10:
-            //         // if (getMonth != 10){
-            //         //     var timestamp = new Date();
-            //         //     timestamp = timestamp.setMonth(10);
-            //         //     if (timestamp < d){
-            //                 var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //         var getFullYearPeriod = getFullYear
-            //         //     }
-            //         // }
-            //         var getFullYearPeriod = getFullYear;
-            //         var end_date = new Date(getFullYearPeriod, 10 + 1, 0);
-            //             end_date = JSON.stringify(end_date.getDate());
-            //             date_to = getFullYearPeriod + '-0'+ JSON.stringify(10) +'-' + end_date;
-            //             // console.log('Switch Case Val' + date_to)
-            //         break;
-            //     case 11:
-            //         // if (getMonth != 11){
-            //         //     var timestamp = new Date();
-            //         //     timestamp = timestamp.setMonth(11);
-            //         //     if (timestamp < d){
-            //                 var getFullYearPeriod = JSON.stringify(parseInt(getFullYear) + 1)
-            //         var getFullYearPeriod = getFullYear
-            //         //     }
-            //         // }
-            //         var getFullYearPeriod = getFullYear;
-            //         var end_date = new Date(getFullYearPeriod, 11 + 1, 0);
-            //             end_date = JSON.stringify(end_date.getDate());
-            //             date_to = getFullYearPeriod + '-0'+ JSON.stringify(10) +'-' + end_date;
-            //             // console.log('Switch Case Val' + date_to)
-            //         break;
-            //         // default : date_to = d.toISOString().split('T')[0];
-            // }
             switch (parseInt($('#period_dropdown').val())) {
-                case 0 : var date = new Date(getFullYear, getMonth - 1, 1);
-                date_to = date.getFullYear() + '-'+ date.getMonth() +'-' + date.getDate();
+                case 0: var date = new Date(getFullYear, getMonth - 1, 1);
+                    date_to = date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
                     break; // Last Period
-                case 1 : var date = new Date(getFullYear, getMonth - 2, 0);
-                    date_to = date.getFullYear() + '-'+ date.getMonth() +'-' + date.getDate();
+                case 1: var date = new Date(getFullYear, getMonth - 2, 0);
+                    date_to = date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
                     break; // Before Last Period
-                case 2 : var date = new Date(getFullYear, getMonth - 3, 0);
-                    date_to = date.getFullYear() + '-'+ date.getMonth() +'-' + date.getDate();
+                case 2: var date = new Date(getFullYear, getMonth - 3, 0);
+                    date_to = date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
                     break; // Three Months Ago
                 default: 0
             }
             switch (parseInt($('#period_dropdown').val())) {
-                case 0 : var date = new Date(getFullYear, getMonth, 0);
+                case 0: var date = new Date(getFullYear, getMonth, 0);
                     var newMonth = date.getMonth();
-                    if (newMonth < 10){
+                    if (newMonth < 10) {
                         newMonth = '0' + newMonth;
                     }
-                    date_to = date.getFullYear() + '-'+ date.getMonth() +'-' + date.getDate();
+                    date_to = date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
                     break; // Last Period
-                case 1 : var date = new Date(getFullYear, getMonth - 1, 0);
-                var newMonth = date.getMonth();
-                    if (newMonth < 10){
-                        newMonth = '0' + newMonth;
-                    }
-                    date_to = date.getFullYear() + '-'+ date.getMonth() +'-' + date.getDate();
-                    break; // Before Last Period
-                case 2 : var date = new Date(getFullYear, getMonth - 2, 0);
+                case 1: var date = new Date(getFullYear, getMonth - 1, 0);
                     var newMonth = date.getMonth();
-                    if (newMonth < 10){
+                    if (newMonth < 10) {
                         newMonth = '0' + newMonth;
                     }
-                    date_to = date.getFullYear() + '-'+ date.getMonth() +'-' + date.getDate();
+                    date_to = date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
+                    break; // Before Last Period
+                case 2: var date = new Date(getFullYear, getMonth - 2, 0);
+                    var newMonth = date.getMonth();
+                    if (newMonth < 10) {
+                        newMonth = '0' + newMonth;
+                    }
+                    date_to = date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
                     break; // Three Months Ago
                 default: 0
             }
@@ -506,21 +204,21 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
             // console.log('Date To ', date_to);
             $('#date_from').val(date_from);
             $('#date_to').val(date_to);
-            if (!isNullorEmpty(date_from) && !isNullorEmpty(date_from)){
-                currRec.setValue({ fieldId: 'custpage_consol_inv_date_to', value: date_to})
-                currRec.setValue({ fieldId: 'custpage_consol_inv_date_from', value: date_from})
+            if (!isNullorEmpty(date_from) && !isNullorEmpty(date_from)) {
+                currRec.setValue({ fieldId: 'custpage_consol_inv_date_to', value: date_to })
+                currRec.setValue({ fieldId: 'custpage_consol_inv_date_from', value: date_from })
             }
-            
-            $(document).on('change', '#method_dropdown', function() {
+
+            $(document).on('change', '#method_dropdown', function () {
                 consol_method_id = $(this).val();
-                if (consol_method_id == 4 ){
+                if (consol_method_id == 4) {
                     var params = {
                         method: consol_method_id,
                         zeeid: zee_id,
                         custid: custid,
                         subcustid: sub_custid,
                         period: period,
-                    } 
+                    }
                 } else {
                     var params = {
                         method: consol_method_id,
@@ -528,23 +226,23 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                         // custid: custid,
                         // subcustid: sub_custid,
                         period: period,
-                    }  
+                    }
                 }
-                               
+
                 params = JSON.stringify(params);
-                var upload_url = baseURL + url.resolveScript({ deploymentId: 'customdeploy_sl_consol_inv', scriptId: 'customscript_sl_consol_inv'}) + '&custparam_params=' + params;
+                var upload_url = baseURL + url.resolveScript({ deploymentId: 'customdeploy_sl_consol_inv', scriptId: 'customscript_sl_consol_inv' }) + '&custparam_params=' + params;
                 currRec.setValue({ fieldId: 'custpage_consol_inv_method_id', value: consol_method_id });
                 window.location.href = upload_url
             });
-            $(document).on('change', '#zee_dropdown', function() {
+            $(document).on('change', '#zee_dropdown', function () {
                 zee_id = $(this).val();
                 var params = {
-                method: consol_method_id,
-                zeeid: zee_id,
-                custid: custid,
-                subcustid: sub_custid,
-                period: period,
-            }                
+                    method: consol_method_id,
+                    zeeid: zee_id,
+                    custid: custid,
+                    subcustid: sub_custid,
+                    period: period,
+                }
                 if (!isNullorEmpty(sub_subcustid)) {
                     params = {
                         method: consol_method_id,
@@ -560,17 +258,17 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 currRec.setValue({ fieldId: 'custpage_consol_inv_custid', value: zee_id });
                 window.location.href = upload_url
             });
-            $(document).on('change', '#parent_dropdown', function() {
+            $(document).on('change', '#parent_dropdown', function () {
                 custid = $(this).val();
                 var params = {
-                method: consol_method_id,
-                zeeid: zee_id,
-                custid: custid,
-                subcustid: sub_custid,
-                period: period,
-            }                
+                    method: consol_method_id,
+                    zeeid: zee_id,
+                    custid: custid,
+                    subcustid: sub_custid,
+                    period: period,
+                }
                 if (!isNullorEmpty(sub_subcustid)) {
-                        params = {
+                    params = {
                         method: consol_method_id,
                         zeeid: zee_id,
                         custid: custid,
@@ -583,17 +281,17 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 var upload_url = baseURL + url.resolveScript({ deploymentId: 'customdeploy_sl_consol_inv', scriptId: 'customscript_sl_consol_inv' }) + '&custparam_params=' + params;
                 window.location.href = upload_url
             });
-            $(document).on('change', '#cust_dropdown', function() {
+            $(document).on('change', '#cust_dropdown', function () {
                 sub_custid = $(this).val();
                 var params = {
-                method: consol_method_id,
-                zeeid: zee_id,
-                custid: custid,
-                subcustid: sub_custid,
-                period: period,
-            }                
+                    method: consol_method_id,
+                    zeeid: zee_id,
+                    custid: custid,
+                    subcustid: sub_custid,
+                    period: period,
+                }
                 if (!isNullorEmpty(sub_subcustid)) {
-                        params = {
+                    params = {
                         method: consol_method_id,
                         zeeid: zee_id,
                         custid: custid,
@@ -606,17 +304,17 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 var upload_url = baseURL + url.resolveScript({ deploymentId: 'customdeploy_sl_consol_inv', scriptId: 'customscript_sl_consol_inv' }) + '&custparam_params=' + params;
                 window.location.href = upload_url
             });
-            $(document).on('change', '#subcust_dropdown', function() {
+            $(document).on('change', '#subcust_dropdown', function () {
                 sub_subcustid = $(this).val();
                 var params = {
-                method: consol_method_id,
-                zeeid: zee_id,
-                custid: custid,
-                subcustid: sub_custid,
-                period: period,
-            }                
+                    method: consol_method_id,
+                    zeeid: zee_id,
+                    custid: custid,
+                    subcustid: sub_custid,
+                    period: period,
+                }
                 if (!isNullorEmpty(sub_subcustid)) {
-                        params = {
+                    params = {
                         method: consol_method_id,
                         zeeid: zee_id,
                         custid: custid,
@@ -630,17 +328,17 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 window.location.href = upload_url
             });
 
-            $(document).on('change', '#period_dropdown', function() {
+            $(document).on('change', '#period_dropdown', function () {
                 period = $(this).val();
                 var params = {
-                method: consol_method_id,
-                zeeid: zee_id,
-                custid: custid,
-                subcustid: sub_custid,
-                period: period,
-            }                
+                    method: consol_method_id,
+                    zeeid: zee_id,
+                    custid: custid,
+                    subcustid: sub_custid,
+                    period: period,
+                }
                 if (!isNullorEmpty(sub_subcustid)) {
-                        params = {
+                    params = {
                         method: consol_method_id,
                         zeeid: zee_id,
                         custid: custid,
@@ -654,7 +352,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 window.location.href = upload_url
             });
 
-            $('#generateInvoice').click(function() {
+            $('#generateInvoice').click(function () {
                 $('#downloadExcel').removeClass('hide'); // Excel Download Button.
                 $('.generateInvoiceSection').removeClass('hide');
                 $('#inv_preview').show();
@@ -662,11 +360,12 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 if (consol_method_id == 1) { // Branch
                     var dataTable = $('#inv_preview').DataTable({
                         data: invDataSet,
-                        // order: [
-                        //     [0, 'asc'], [1, 'asc']
-                        // ],
+                        pageLength: 100,
+                        order: [
+                            [0, 'asc'], [2, 'asc']
+                        ],
                         columns: [
-                            { title: 'Matched Parent'}, //0
+                            { title: 'Matched Parent' }, //0
                             { title: 'State' },
                             { title: 'Location' },
                             { title: 'Type' },
@@ -679,70 +378,17 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                             { title: 'GST' },
                             { title: 'Gross' }
                         ],
-                        // rowGroup: {
-                        //     dataSrc: [0, 1],
-                        //     // startRender: function (rows, group) {
-                        //     //     return $('<tr/>')
-                        //     //       .append( '<td class="td-left" colspan="4">'+ group +'</td>' );
-                        //     // },
-                        //     // var avg = rows
-                        //         //     .data()
-                        //         //     .pluck(8)
-                        //         //     .reduce( function (a, b) {
-                        //         //         return a + b.replace(/[^\d]/g, '')*1;
-                        //         //     }, 0) / rows.count();
-
-                        //     startRender: null,
-                        //     endRender: function ( rows, group ) {
-                                
-                        //         var sum_quantity = rows.data().pluck(7).reduce( function (a, b) {
-                        //             return a + b.replace(/[]/g, '')*1;
-                        //         }, 0);
-                        //         sum_quantity + $.fn.dataTable.render.number(',', '.', 0, '$').display( sum_quantity );
-
-                        //         var avg_item_rate = rows
-                        //             .data()
-                        //             .pluck(8)
-                        //             .reduce( function (a, b) {
-                        //                 return a + b.replace(/[]/g, '')*1; // ^\d
-                        //             }, 0) / rows.count();
-                        //             avg_item_rate = $.fn.dataTable.render.number(',', '.', 2, '$').display( avg_item_rate );
-
-                        //         var sum_amount = rows.data().pluck(9).reduce( function (a, b) {
-                        //             return a + b.replace(/[]/g, '')*1;
-                        //         }, 0);
-                        //         sum_amount = $.fn.dataTable.render.number(',', '.', 2, '$').display( sum_amount );
-
-                        //         var sum_gst = rows.data().pluck(10).reduce( function (a, b) {
-                        //             return a + b.replace(/[]/g, '')*1;
-                        //         }, 0);
-                        //         sum_gst = $.fn.dataTable.render.number(',', '.', 2, '$').display( sum_gst );
-
-                        //         var sum_gross = rows.data().pluck(11).reduce( function (a, b) {
-                        //             return a + b.replace(/[]/g, '')*1;
-                        //         }, 0);
-                        //         sum_gross = $.fn.dataTable.render.number(',', '.', 2, '$').display( sum_gross );
-                 
-                        //         return $('<tr/>')
-                        //         .append( '<td colspan="5">'+group+' Total </td><td/><td/><td>'+ sum_quantity.toFixed(0) +'</td>' )
-                        //         .append( '<td>'+ avg_item_rate +'</td><td>'+ sum_amount +'</td><td>'+ sum_gst +'</td><td>'+ sum_gross +'</td>' );
-                        //         // .append( '<td/>' );
-                        //         // group + ' Total : '+
-                        //     },
-                        // },
-                        columnDefs: [{
-
-                        }],
                     });
                 } else if (consol_method_id == 2) { // State
                     var dataTable = $('#inv_preview').DataTable({
                         data: invDataSet,
                         pageLength: 100,
-                        // order: [
-                        //     [0, 'asc'], [1, 'asc']
-                        // ],
+                        order: [
+                            [0, 'asc'], [2, 'asc']
+                        ],
                         columns: [
-                            { title: 'Matched Parent'}, // 00
+                            { title: 'Matched Parent' }, // 00
+                            { title: 'Sub-Parent' },
                             { title: 'State' }, // 0 
                             { title: 'Location' }, // 1
                             { title: 'Type' }, // 2
@@ -755,105 +401,6 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                             { title: 'GST' }, // 9
                             { title: 'Gross' } // 10  
                         ],
-                        rowCallback: function(row, data) {
-                            var api = this.api(), data;
-                            if (data[0] == -1){
-                                var sum = api.data().pluck(8).reduce( function (a, b) {
-                                    return a + b.replace(/[]/g, '')*1;
-                                }, 0);
-                                // console.log(sum);
-                                // return group + ' Total : '+
-                                //     $.fn.dataTable.render.number(',', '.', 0, '$').display( sum );
-                                data[0] = sum;
-                            }
-                        },
-                        // rowGroup: {
-                        //     dataSrc: [0, 1],
-                        //     // startRender: function (rows, group) {
-                        //     //     return $('<tr/>')
-                        //     //       .append( '<td class="td-left" colspan="4">'+ group +'</td>' );
-                        //     // },
-                        //     // var avg = rows
-                        //         //     .data()
-                        //         //     .pluck(8)
-                        //         //     .reduce( function (a, b) {
-                        //         //         return a + b.replace(/[^\d]/g, '')*1;
-                        //         //     }, 0) / rows.count();
-
-                        //     startRender: null,
-                        //     // function ( rows, group ){
-                        //     //     $(rows.nodes()).each(function(){
-                        //     //         $(this).remove();
-                        //     //     });
-                        //     // },
-                        //     endRender: function ( rows, group ) {
-                        //         var index = rows.data();
-                        //         var sum_quantity = rows.data().pluck(7).reduce( function (a, b) {
-                        //             return a + b.replace(/[]/g, '')*1;
-                        //         }, 0);
-                        //         sum_quantity + $.fn.dataTable.render.number(',', '.', 0, '$').display( sum_quantity );
-
-                        //         var avg_item_rate = rows
-                        //             .data()
-                        //             .pluck(8)
-                        //             .reduce( function (a, b) {
-                        //                 return a + b.replace(/[]/g, '')*1; // ^\d
-                        //             }, 0) / rows.count();
-                        //             avg_item_rate = $.fn.dataTable.render.number(',', '.', 2, '$').display( avg_item_rate );
-
-                        //         var sum_amount = rows.data().pluck(9).reduce( function (a, b) {
-                        //             return a + b.replace(/[]/g, '')*1;
-                        //         }, 0);
-                        //         sum_amount = $.fn.dataTable.render.number(',', '.', 2, '$').display( sum_amount );
-
-                        //         var sum_gst = rows.data().pluck(10).reduce( function (a, b) {
-                        //             return a + b.replace(/[]/g, '')*1;
-                        //         }, 0);
-                        //         sum_gst = $.fn.dataTable.render.number(',', '.', 2, '$').display( sum_gst );
-
-                        //         var sum_gross = rows.data().pluck(11).reduce( function (a, b) {
-                        //             return a + b.replace(/[]/g, '')*1;
-                        //         }, 0);
-                        //         sum_gross = $.fn.dataTable.render.number(',', '.', 2, '$').display( sum_gross );
-                 
-                        //         var state =  ['NSW', 'QLD', 'VIC', 'SA', 'TAS', 'ACT', 'WA', 'NT'];
-                        //         if (state.indexOf(group) != -1){
-                        //             return $('<tr class="end_group_state_'+ rows.data().pluck(12)[1] +'"/>')
-                        //         .append( '<td colspan="5">'+group+' Total </td><td/>')
-                        //         .append( '<td/><td>'+ sum_quantity.toFixed(0) +'</td><td>'+ avg_item_rate +'</td><td>'+ sum_amount +'</td><td>'+ sum_gst +'</td><td>'+ sum_gross +'</td>' );
-                        //         // .append( '<td/>' );
-                        //         } else {
-                        //             return $('<tr class="end_group_cust_'+ index[12] +'"/>')
-                        //         .append( '<td colspan="5">'+group+' Total </td><td><button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="'+ rows.data().pluck(12)[0] +'" class="downloadPDF btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit">Download PDF</button></td>')
-                        //         .append( '<td/><td>'+ sum_quantity.toFixed(0) +'</td><td>'+ avg_item_rate +'</td><td>'+ sum_amount +'</td><td>'+ sum_gst +'</td><td>'+ sum_gross +'</td>' );
-                        //         // .append( '<td/>' );
-                        //         }
-                                
-                        //     },
-                        // },
-                        footerCallback: function ( row, data, start, end, display ) {
-                            var api = this.api(), data;
-                                 
-                            // Total over all pages
-                            var total = api
-                                .column( 4 )
-                                .data()
-                                .reduce( function (a, b) {
-                                    return a + b.replace(/[]/g, '')*1; // ^\d
-                                }, 0); 
-                            // Total over this page
-                            var pageTotal = api
-                                .column( 4, { page: 'current'} )
-                                .data()
-                                .reduce( function (a, b) {
-                                    return a + b.replace(/[]/g, '')*1; // ^\d
-                                }, 0);
-                 
-                            // Update footer
-                            $( api.column( 4 ).footer() ).html(
-                                '$'+pageTotal +' ( $'+ total +' total)'
-                            );
-                        },
                         columnDefs: [
                             {
                                 target: [11, 12],
@@ -864,11 +411,12 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 } else if (consol_method_id == 3) { // Invoice Type
                     var dataTable = $('#inv_preview').DataTable({
                         data: invDataSet,
-                        order: [
-                            [0, 'asc'], [1, 'asc']
-                        ],
+                        pageLength: 100,
+                        // order: [
+                        //     [0, 'asc'], [1, 'asc']
+                        // ],
                         columns: [
-                            { title: 'Matched Parent'},
+                            { title: 'Matched Parent' },
                             { title: 'State' }, // 0
                             { title: 'Location' }, // 1
                             { title: 'Type' }, // 2
@@ -883,58 +431,17 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                             // 11
                             // 12 Company ID
                         ],
-                        // rowGroup: {
-                        //     dataSrc: [0, 1],
-                        //     startRender: null,
-                        //     endRender: function ( rows, group ) {
-                                
-                        //         var sum_quantity = rows.data().pluck(7).reduce( function (a, b) {
-                        //             return a + b.replace(/[]/g, '')*1;
-                        //         }, 0);
-                        //         sum_quantity + $.fn.dataTable.render.number(',', '.', 0, '$').display( sum_quantity );
-
-                        //         var avg_item_rate = rows
-                        //             .data()
-                        //             .pluck(8)
-                        //             .reduce( function (a, b) {
-                        //                 return a + b.replace(/[]/g, '')*1; // ^\d
-                        //             }, 0) / rows.count();
-                        //             avg_item_rate = $.fn.dataTable.render.number(',', '.', 2, '$').display( avg_item_rate );
-
-                        //         var sum_amount = rows.data().pluck(9).reduce( function (a, b) {
-                        //             return a + b.replace(/[]/g, '')*1;
-                        //         }, 0);
-                        //         sum_amount = $.fn.dataTable.render.number(',', '.', 2, '$').display( sum_amount );
-
-                        //         var sum_gst = rows.data().pluck(10).reduce( function (a, b) {
-                        //             return a + b.replace(/[]/g, '')*1;
-                        //         }, 0);
-                        //         sum_gst = $.fn.dataTable.render.number(',', '.', 2, '$').display( sum_gst );
-
-                        //         var sum_gross = rows.data().pluck(11).reduce( function (a, b) {
-                        //             return a + b.replace(/[]/g, '')*1;
-                        //         }, 0);
-                        //         sum_gross = $.fn.dataTable.render.number(',', '.', 2, '$').display( sum_gross );
-                 
-                        //         return $('<tr/>')
-                        //         .append( '<td colspan="5">'+group+' Total </td><td><button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="downloadPDF_'+ rows.data().pluck(12) +'" class="btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit">Download PDF</button></td>')
-                        //         .append( '<td/><td>'+ sum_quantity.toFixed(0) +'</td><td>'+ avg_item_rate +'</td><td>'+ sum_amount +'</td><td>'+ sum_gst +'</td><td>'+ sum_gross +'</td>' );
-                        //         // .append( '<td/>' );
-                        //     },
-                        // },
-                        columnDefs: [{
-
-                        }],
                     });
                 } else if (consol_method_id == 4) { // Multi-Parent
                     var dataTable = $('#inv_preview').DataTable({
                         data: invDataSet,
-                        order: [
-                            [0, 'asc'], [2, 'asc']
-                        ],
+                        pageLength: 100,
+                        // order: [
+                        //     [0, 'asc'], [2, 'asc']
+                        // ],
                         columns: [
-                            { title: 'Matched Parent'},
-                            { title: 'SubParent' },
+                            { title: 'Matched Parent' },
+                            { title: 'Sub-Parent' },
                             { title: 'State' },
                             { title: 'Location' },
                             { title: 'Type' },
@@ -947,114 +454,55 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                             { title: 'GST' },
                             { title: 'Gross' }
                         ],
-                        // rowGroup: {
-                        //     dataSrc: [0, 2],
-                        //     // startRender: function (rows, group) {
-                        //     //     return $('<tr/>')
-                        //     //       .append( '<td class="td-left" colspan="4">'+ group +'</td>' );
-                        //     // },
-                        //     // var avg = rows
-                        //     //     .data()
-                        //     //     .pluck(8)
-                        //     //     .reduce( function (a, b) {
-                        //     //         return a + b.replace(/[^\d]/g, '')*1;
-                        //     //     }, 0) / rows.count();
-
-                        //     startRender: null,
-                        //     endRender: function ( rows, group ) {
-                                
-                        //         var sum_quantity = rows.data().pluck(8).reduce( function (a, b) {
-                        //             return a + b.replace(/[]/g, '')*1;
-                        //         }, 0);
-                        //         sum_quantity + $.fn.dataTable.render.number(',', '.', 0, '$').display( sum_quantity );
-
-                        //         var avg_item_rate = rows
-                        //             .data()
-                        //             .pluck(9)
-                        //             .reduce( function (a, b) {
-                        //                 return a + b.replace(/[]/g, '')*1; // ^\d
-                        //             }, 0) / rows.count();
-                        //             avg_item_rate = $.fn.dataTable.render.number(',', '.', 2, '$').display( avg_item_rate );
-
-                        //         var sum_amount = rows.data().pluck(10).reduce( function (a, b) {
-                        //             return a + b.replace(/[]/g, '')*1;
-                        //         }, 0);
-                        //         sum_amount = $.fn.dataTable.render.number(',', '.', 2, '$').display( sum_amount );
-
-                        //         var sum_gst = rows.data().pluck(11).reduce( function (a, b) {
-                        //             return a + b.replace(/[]/g, '')*1;
-                        //         }, 0);
-                        //         sum_gst = $.fn.dataTable.render.number(',', '.', 2, '$').display( sum_gst );
-
-                        //         var sum_gross = rows.data().pluck(12).reduce( function (a, b) {
-                        //             return a + b.replace(/[]/g, '')*1;
-                        //         }, 0);
-                        //         sum_gross = $.fn.dataTable.render.number(',', '.', 2, '$').display( sum_gross );
-                 
-                        //         invDataSet.push([sum_amount, sum_gross, sum_gst, sum_quantity]);
-
-                        //         var state =  ['NSW', 'QLD', 'VIC', 'SA', 'TAS', 'ACT', 'WA', 'NT'];
-                        //         if (state.indexOf(group) != -1){
-                        //             return $('<tr class="end_group_state_'+ rows.data().pluck(12)[1] +'"/>')
-                        //         .append( '<td colspan="5">'+group+' Total </td><td/>')
-                        //         .append( '<td/><td>'+ sum_quantity.toFixed(0) +'</td><td>'+ avg_item_rate +'</td><td>'+ sum_amount +'</td><td>'+ sum_gst +'</td><td>'+ sum_gross +'</td>' );
-                        //         // .append( '<td/>' );
-                        //         } else {
-                        //             return $('<tr class="end_group_cust_'+ index[12] +'"/>')
-                        //         .append( '<td colspan="5">'+group+' Total </td><td><button pdfid="'+rows.data().pluck(12)[0]+'" style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="group_cust_'+ rows.data().pluck(12)[0] +'" class="downloadPDF btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit">Download PDF</button></td>')
-                        //         .append( '<td/><td>'+ sum_quantity.toFixed(0) +'</td><td>'+ avg_item_rate +'</td><td>'+ sum_amount +'</td><td>'+ sum_gst +'</td><td>'+ sum_gross +'</td>' );
-                        //         // .append( '<td/>' );
-                        //         }
-                        //         // .append( '<td/>' );
-                        //         // group + ' Total : '+
-                        //     },
-                        // },
-                        columnDefs: [{
-                                targets: [],
-                                className: ''
-                            },
-                            {
-                                targets: [],
-                                className: ''
-                            },
-                        ],
                     });
                 }
 
-                if (consol_method_id != 2){
-                    loadMultiParentScript(date_from, date_to, consol_method_id, period);
-                } else {
-                    loadInvRecord(date_from, date_to, consol_method_id, period, custid, sub_custid, dataTable);
-                }
-                
+                // if (consol_method_id == 2) {
+                // loadInvRecord(consol_method_id);
+                // } else {
+                loadMultiParentScript(date_from, date_to, consol_method_id, period);
+                // }
+
                 console.log('Inv Data of Group: ' + invDataSet);
 
-                $('.downloadPDF').click(function() {
-                    var cust_id = $(this).attr("id");
-                    console.log('Cust ID ' + cust_id);
-    
-                    currRec.setValue({ fieldId: 'custpage_consol_inv_custid', value: cust_id });
-                    if (!isNullorEmpty(sub_custid)){
-                        currRec.setValue({ fieldId: 'custpage_consol_inv_sub_custid', value: sub_custid });
-                    }
-                    // $('#submitter').trigger('click');
-                });
+                // $('.downloadPDF').click(function () {
+                //     var cust_id = $(this).attr("id");
+                //     console.log('Cust ID ' + cust_id);
 
+                //     currRec.setValue({ fieldId: 'custpage_consol_inv_custid', value: cust_id });
+                //     if (!isNullorEmpty(sub_custid)) {
+                //         currRec.setValue({ fieldId: 'custpage_consol_inv_sub_custid', value: sub_custid });
+                //     }
+                //     downloadCsv();
+                //     // $('#submitter').trigger('click');
+                // });
                 // $('#submitter').trigger('click');
                 // $('#generateInvoice').submit();
             });
 
-            $('#downloadAsPDF').click(function(){
+            $('#downloadAsPDF').click(function () {
                 downloadPDF();
             });
 
-            $('#downloadExcel').click(function() {
+            $('#downloadExcel').click(function () {
                 downloadExcel();
             });
 
+            $('.downloadPDF').click(function () {
+                var cust_id = $(this).attr("id");
+                console.log('Cust ID ' + cust_id);
+
+                currRec.setValue({ fieldId: 'custpage_consol_inv_custid', value: cust_id });
+                if (!isNullorEmpty(sub_custid)) {
+                    currRec.setValue({ fieldId: 'custpage_consol_inv_sub_custid', value: sub_custid });
+                }
+                // downloadCsv();
+                saveExcel(cust_id)
+                // $('#submitter').trigger('click');
+            });
         }
 
-        function loadInvRecord(date_from, date_to, consol_method_id, period, custid, sub_custid, dataTable) {
+        function loadInvRecord(consol_method_id) {
             console.log('Load Record Table');
 
             var csvBillSet = [];
@@ -1066,14 +514,54 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
             console.log('Loaded div')
             // var amount, gst, gross;
             var tot_rate = 0;
-            var sub_total = 0; 
+            var sub_total = 0;
             var tot_GST = 0;
             var total = 0;
+            var tot_rate_index = 1;
 
-            var consolInvItemSearch = search.load({
-                type: 'invoice',
-                id: 'customsearch_consol_inv_lineitem'
-            });
+            //State
+            var state_tot_rate = 0;
+            var state_sub_total = 0;
+            var state_tot_GST = 0;
+            var state_total = 0;
+            var state_tot_rate_index = 1;
+
+            //Branch
+            var branch_tot_rate = 0;
+            var branch_sub_total = 0;
+            var branch_tot_GST = 0;
+            var branch_total = 0;
+            var branch_tot_rate_index = 1;
+
+            //Type
+            var type_tot_rate = 0;
+            var type_sub_total = 0;
+            var type_tot_GST = 0;
+            var type_total = 0;
+            var type_tot_rate_index = 1;
+
+            if (consol_method_id == 1) {
+                var consolInvItemSearch = search.load({
+                    type: 'invoice',
+                    id: 'customsearch_consol_inv_lineitem_2'
+                });
+            } else if (consol_method_id == 2) {
+                var consolInvItemSearch = search.load({
+                    type: 'invoice',
+                    id: 'customsearch_consol_inv_lineitem_3'
+                });
+            } else if (consol_method_id == 3) {
+                var consolInvItemSearch = search.load({
+                    type: 'invoice',
+                    id: 'customsearch_consol_inv_lineitem_4'
+                });
+            }
+            else if (consol_method_id == 4) {
+                var consolInvItemSearch = search.load({
+                    type: 'invoice',
+                    id: 'customsearch_consol_inv_lineitem_5'
+                });
+            }
             console.log('Consolidation Method ID: ' + parseInt(consol_method_id));
             consolInvItemSearch.filters.push(search.createFilter({
                 name: 'custentity_inv_consolidation_mtd',
@@ -1081,61 +569,60 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 operator: search.Operator.ANYOF,
                 values: parseInt(consol_method_id)
             }));
-            // console.log('Posting Period' + parseInt(period))
-            // switch (parseInt(period)){
-            //     case 0 : consolInvItemSearch.filters.push(search.createFilter({
-            //         name: 'postingperiod',
-            //         operator: search.Operator.ANYOF,
-            //         values: "LP"
-            //     }));
-            //         break;
-            //     case 1 : consolInvItemSearch.filters.push(search.createFilter({
-            //         name: 'postingperiod',
-            //         operator: search.Operator.ANYOF,
-            //         values: "PBL"
-            //     }));
-            //         break;
-            // }
-            //  filter.push(["trandate", "within", "1/5/2021", "31/5/2021"], "AND", ["formulatext: {customer.parent}", "contains", "71143844 Air Liquide Australia Solutions Pty Ltd- QLD Parent"])
-            
-            var consolInvItemResultsLength = consolInvItemSearch.runPaged().count;
-            // console.log('Result Length: ' + consolInvItemResultsLength);
-            var consolInvItemResults = consolInvItemSearch.run(); //.getRange({ start: 0, end: consolInvItemResultsLength });
-            console.log('Results: ' + JSON.parse(JSON.stringify(consolInvItemResults)));
+            if (consol_method_id) {
+                consolInvItemSearch.columns.push(search.createColumn({
+                    name: "formulatext",
+                    formula: "{customer.parent}",
+                    label: "Formula (Text)",
+                    sort: search.Sort.ASC
+                }));
+            }
+
+            var consolInvItemResultsLength = consolInvItemSearch.runPaged().count; // console.log('Result Length: ' + consolInvItemResultsLength);
+            var consolInvItemResults = consolInvItemSearch.run().getRange({ start: 0, end: 50 });
+            // console.log('Results: ' + JSON.parse(JSON.stringify(consolInvItemResults)));
             var company_name_set = [];
+            var location_name_set = [];
+            var branch_name_set = [];
+            var state_name_set = [];
+            var type_name_set = [];
+            var subparent_name_set = []
 
             var index = 0;
-            consolInvItemResults.each(function(line_item) {               
+            consolInvItemResults.forEach(function (line_item) {
                 console.log('Index Value: ' + index);
-                
+
                 var invoice_id = line_item.getValue({ name: 'internalid' });
                 var cust_id = line_item.getValue({ name: 'internalid', join: 'customer' });
-                if (consol_method_id == 4){
+                if (consol_method_id == 2 || consol_method_id == 4) {
                     var subCustRecord = record.load({ type: 'customer', id: cust_id });
                     var sub_parent_id = subCustRecord.getValue({ fieldId: 'parent' })
                     var SubParentRecord = record.load({ type: 'customer', id: sub_parent_id });
-                    var sub_parent_name = SubParentRecord.getValue({ fieldId: 'companyname'});
+                    var sub_parent_name = SubParentRecord.getValue({ fieldId: 'companyname' });
                     console.log('Sub Parent: ' + sub_parent_id);
+
+
+                    subparent_name_set.push(sub_parent_name);
                 }
 
                 var type = line_item.getValue({ name: 'formulatext_1', formula: "DECODE({custbody_inv_type},'','Service','AP Products','Product',{custbody_inv_type})" });
-                if (isNullorEmpty(type)){
+                if (isNullorEmpty(type)) {
                     var type = 'Service';
                 }
                 // var type = line_item.getValue({ name: 'custbody_inv_type'});
 
-                var company_name = line_item.getValue({ name: "formulatext", formula: '{customer.parent}'});
+                var company_name = line_item.getValue({ name: "formulatext", formula: '{customer.parent}' });
                 console.log('Company Name: ' + company_name);
                 var company_id = company_name.split(" ")[0];
                 var company_id_length = parseInt(company_name.split(" ")[0].length);
                 company_name = company_name.slice(company_id_length + 1);
 
-                if (index == 0){
+                if (index == 0) {
                     company_name_set.push(company_name);
-                    csvTaxSet.push(["Date* " + date +'\n'+  "Invoice #" + invoice_code +'\n'+ 'Due Date ' + due_date +'\n'+ 'ABN ' + abn +'\n'+ 'Customer PO# ' + po_box +'\n'+ 'Services From ' + service_from +'\n'+ 'Services To ' + service_to +'\n'+ 'Terms ' + terms]);
+                    csvTaxSet.push(["Date* " + date + '\n' + "Invoice #" + invoice_code + '\n' + 'Due Date ' + due_date + '\n' + 'ABN ' + abn + '\n' + 'Customer PO# ' + po_box + '\n' + 'Services From ' + service_from + '\n' + 'Services To ' + service_to + '\n' + 'Terms ' + terms]);
                     csvBillSet.push([billaddress]);
                 }
-                
+
                 /**
                  *  Tax Invoice Header
                  */
@@ -1173,8 +660,8 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 /**
                  *  Table
                  */
-                var state = line_item.getValue({ name: 'billstate' }); // location
-                var location = line_item.getValue({ name: 'billaddressee' }); // companyname
+                // var location = line_item.getValue({ name: 'billaddressee' }); // companyname
+                location_name_set.push(location);
 
                 var item_id = line_item.getValue({ name: 'item' });
                 // Item Record
@@ -1189,7 +676,6 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                         // alert(e)
                         // console.log('Error in Item' + e);
                     }
-
                     if (!isNullorEmpty(itemRecord)) {
                         item = itemRecord.getValue({ fieldId: 'itemid' });
                     } else {
@@ -1197,63 +683,393 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                     }
                     // console.log('item: ' + item)
                 }
-                //  var item = 'Counter Bankings'
+                //  var item = 'Counter Bankings';
                 var details = line_item.getText({ name: 'custcol1' });
 
                 var ref_val = line_item.getValue({ name: 'tranid' })
                 var upload_url_inv = '/app/accounting/transactions/custinvc.nl?id=';
                 var ref = '<a href="' + baseURL + upload_url_inv + invoice_id + '" target="_blank">' + ref_val + '</a>';
-
                 var qty = line_item.getValue({ name: 'quantity' })
                 var rate = line_item.getValue({ name: 'rate' })
                 var amount = line_item.getValue({ name: 'amount' });
                 var gst = line_item.getValue({ name: 'taxamount' });
                 var gross = line_item.getValue({ name: "formulacurrency", formula: '{amount}+{taxamount}' });
-
-                if (company_name_set.indexOf(company_name) != -1){
-                    tot_rate += parseFloat(rate.replace(/[]/g, '')*1);
-                    if (!isNullorEmpty(amount)) {
-                        console.log('Amount' + amount)
-                        sub_total += parseFloat(amount.replace(/[]/g, '')*1);
-                        console.log('Sub Total' + sub_total)
-                    }
-                    tot_GST += parseFloat(gst.replace(/[]/g, '')*1);
-                    total += parseFloat(gross.replace(/[]/g, '')*1);
+                // var state = line_item.getValue({ name: 'billstate' }); // location
+                var state = line_item.getText({ name: 'location', join: 'custbody_franchisee' });
+                if (index == 0) {
+                    state_name_set.push(state);
+                    branch_name_set.push(location);
                 }
-                
+                if (state_tot_rate_index == 1) {
+                    if (!isNullorEmpty(state)) {
+                        state_name_set.push(state);
+                    }
+                }
+                if (branch_tot_rate_index == 1) {
+                    branch_name_set.push(location);
+                }
+                if (type_tot_rate_index == 1) {
+                    type_name_set.push(type);
+                }
+
+                if (company_name_set.indexOf(company_name) != -1) {
+                    tot_rate += parseFloat(rate.replace(/[]/g, '') * 1);
+                    tot_rate_index++;
+                    if (!isNullorEmpty(amount)) {
+                        // console.log('Amount' + amount)
+                        sub_total += parseFloat(amount.replace(/[]/g, '') * 1);
+                        // console.log('Sub Total' + sub_total)
+                    }
+                    tot_GST += parseFloat(gst.replace(/[]/g, '') * 1);
+                    total += parseFloat(gross.replace(/[]/g, '') * 1);
+                }
 
                 if (isNullorEmpty(gross)) {
                     type += ' Total'
                 }
-                if (consol_method_id == 4) {
+
+                /**
+                 *  BRANCH
+                 *  if Location Name is Same {
+                 *      Calcuate Totals
+                 *  }   else {
+                 *      Push Totals Line with Total Amount
+                 *      Push New Line
+                 *  }
+                 */
+                /**
+                 *  STATE
+                 * If Location Name is Same{
+                 * Each Interation  
+                 *  if State is the same {
+                 *      Increment amount per customer. return true;
+                 *  } else If state is different {
+                 *      Push New State Value & Push State & Total Clear Previous Total Values Prior to Pushing Normal Value of New Element
+                 *  }
+                 * }else if location name is different {
+                 * 
+                 * }
+                 * 
+                 * if Company Name is Different, But State length = 1 {
+                 *      Push New State Value & Push State Total Clear Previous Values
+                 * }
+                 */
+                /**
+                 *  INVOICE TYPE
+                 *  if (location same){
+                 *      if (service is same){
+                 *          Increment amount
+                 *      } else {
+                 *          Push new invoice_type and totals
+                 *      }
+                 *  }
+                 */
+                if (consol_method_id == 1) {
+                    if (branch_name_set.indexOf(location) != -1) {
+                        branch_tot_rate += parseFloat(rate.replace(/[]/g, '') * 1);
+                        branch_tot_rate_index++;
+                        if (!isNullorEmpty(amount)) {
+                            // console.log('Branch: Amount' + amount);
+                            branch_sub_total += parseFloat(amount.replace(/[]/g, '') * 1);
+                            // console.log('Branch: Sub Total' + sub_total);
+                        }
+                        branch_tot_GST += parseFloat(gst.replace(/[]/g, '') * 1);
+                        branch_total += parseFloat(gross.replace(/[]/g, '') * 1);
+                    } else {
+                        // if (branch_tot_rate_index != 1 || branch_tot_rate_index != 0) {
+                        // console.log('Branch: New Branch');
+                        branch_name_set.push(location);
+
+                        branch_tot_rate = (branch_tot_rate / branch_tot_rate_index);
+                        branch_tot_rate = branch_tot_rate.toFixed(2);
+                        branch_sub_total = branch_sub_total.toFixed(2);
+                        branch_tot_GST = branch_tot_GST.toFixed(2);
+                        branch_total = branch_total.toFixed(2);
+
+                        // console.log('Branch Function: Branch ' + company_name);
+                        // console.log('Branch Function: Index ' + branch_name_set.indexOf(company_name))
+                        // console.log('Branch Function: List ' + JSON.stringify(branch_name_set));
+
+                        var branch_list_length = branch_name_set.length;
+                        if (branch_list_length <= 1) {
+                            var previous_branch_name = branch_name_set[branch_list_length - 1];
+                        } else {
+                            var previous_branch_name = branch_name_set[branch_list_length - 2];
+                        }
+                        // console.log('Branch Function: Pre-State Name ' + previous_branch_name);
+                        var list_length = company_name_set.length;
+                        var previous_company_name = company_name_set[list_length - 1];
+
+                        // if (branch_tot_rate_index != 1){
+                        invDataSet.push([previous_company_name, '', previous_branch_name + ' Total', '', '', '', '', '', branch_tot_rate, branch_sub_total, branch_tot_GST, branch_total])
+                        csvTableSet.push([previous_company_name, '', previous_branch_name + ' Total', '', '', '', '', '', branch_tot_rate, branch_sub_total, branch_tot_GST, branch_total])
+                        // }
+
+                        // branch_name_set = [];
+                        branch_tot_rate_index = 1;
+                        branch_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
+                        branch_sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
+                        branch_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
+                        branch_total = parseFloat(gross.replace(/[]/g, '') * 1);
+                        // }
+                    }
+                } else if (consol_method_id == 2 || consol_method_id == 4) {
+                    if (subparent_name_set.indexOf(sub_parent_name) != -1) {
+                        console.log('State Index: ' + state_name_set.indexOf(state));
+                        console.log('State Array: ' + state_name_set)
+
+                        if (!isNullorEmpty(state)) {
+                            if (state_name_set.indexOf(state) != -1) {
+                                state_tot_rate += parseFloat(rate.replace(/[]/g, '') * 1);
+                                state_tot_rate_index++;
+                                if (!isNullorEmpty(amount)) {
+                                    console.log('State: Amount' + amount);
+                                    state_sub_total += parseFloat(amount.replace(/[]/g, '') * 1);
+                                    console.log('State: Sub Total' + sub_total);
+                                }
+                                state_tot_GST += parseFloat(gst.replace(/[]/g, '') * 1);
+                                state_total += parseFloat(gross.replace(/[]/g, '') * 1);
+                            } else {
+                                console.log('State: New State');
+                                state_name_set.push(state);
+
+                                state_tot_rate = (state_tot_rate / state_tot_rate_index);
+                                state_tot_rate = state_tot_rate.toFixed(2);
+                                state_sub_total = state_sub_total.toFixed(2);
+                                state_tot_GST = state_tot_GST.toFixed(2);
+                                state_total = state_total.toFixed(2);
+
+                                console.log('State Function: State ' + state);
+                                console.log('State Function: Index ' + state_name_set.indexOf(state))
+                                console.log('State Function: List ' + JSON.stringify(state_name_set));
+
+                                var state_list_length = state_name_set.length;
+                                if (state_list_length <= 1) {
+                                    var previous_state_name = state_name_set[state_list_length - 1];
+                                } else {
+                                    var previous_state_name = state_name_set[state_list_length - 2];
+                                }
+                                console.log('State Function: Pre-State Name ' + previous_state_name);
+                                var list_length = company_name_set.length;
+                                var previous_company_name = company_name_set[list_length - 1];
+
+                                // if (consol_method_id == 4){
+                                var sub_parent_list_length = subparent_name_set.length;
+                                var previous_sub_parent_name = sub_parent_name[sub_parent_list_length - 1];
+                                console.log('State Function: Sub-Parent Name ' + previous_sub_parent_name);
+                                console.log('State Function: Sub-Parent Array ' + sub_parent_name);
+
+                                invDataSet.push([previous_company_name, previous_sub_parent_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
+                                csvTableSet.push([previous_company_name, previous_sub_parent_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
+                                // } else {
+                                // invDataSet.push([previous_company_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
+                                // csvTableSet.push([previous_company_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
+                                // }
+
+                                state_name_set = [];
+                                state_tot_rate_index = 1;
+                                state_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
+                                state_sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
+                                state_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
+                                state_total = parseFloat(gross.replace(/[]/g, '') * 1);
+                            }
+                        }
+                    }
+                    if ((company_name_set.indexOf(company_name) == -1 && state_name_set.indexOf(state) == 0)) {
+                        console.log('State: End State');
+                        // state_name_set.push(state);
+                        state_tot_rate = (state_tot_rate / state_tot_rate_index);
+                        state_tot_rate = state_tot_rate.toFixed(2);
+                        state_sub_total = state_sub_total.toFixed(2);
+                        state_tot_GST = state_tot_GST.toFixed(2);
+                        state_total = state_total.toFixed(2);
+
+                        console.log('State End: State ' + state);
+                        console.log('State End: Index ' + state_name_set.indexOf(state))
+                        console.log('State End: List ' + JSON.stringify(state_name_set));
+
+                        var state_list_length = state_name_set.length;
+                        var previous_state_name = state_name_set[state_list_length - 1];
+                        console.log('State End: Pre-State Name First ' + previous_state_name);
+                        var list_length = company_name_set.length;
+                        var previous_company_name = company_name_set[list_length - 1];
+
+                        // invDataSet.push([previous_company_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
+                        // csvTableSet.push([previous_company_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
+                        var sub_parent_list_length = subparent_name_set.length;
+                        var previous_sub_parent_name = sub_parent_name[sub_parent_list_length - 1];
+                        invDataSet.push([previous_company_name, previous_sub_parent_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
+                        csvTableSet.push([previous_company_name, previous_sub_parent_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
+
+                        state_name_set = [];
+                        state_tot_rate_index = 1;
+                        state_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
+                        state_sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
+                        state_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
+                        state_total = parseFloat(gross.replace(/[]/g, '') * 1);
+                    }
+                } else if (consol_method_id == 3) {
+                    if (location_name_set.indexOf(location) != -1) {
+                        if (type_name_set.indexOf(type) != -1) {
+                            type_tot_rate += parseFloat(rate.replace(/[]/g, '') * 1);
+                            type_tot_rate_index++;
+                            if (!isNullorEmpty(amount)) {
+                                console.log('type: Amount' + amount);
+                                type_sub_total += parseFloat(amount.replace(/[]/g, '') * 1);
+                                console.log('type: Sub Total' + sub_total);
+                            }
+                            type_tot_GST += parseFloat(gst.replace(/[]/g, '') * 1);
+                            type_total += parseFloat(gross.replace(/[]/g, '') * 1);
+                        } else {
+                            console.log('type: New type');
+                            type_name_set.push(type);
+
+                            type_tot_rate = (type_tot_rate / type_tot_rate_index);
+                            type_tot_rate = type_tot_rate.toFixed(2);
+                            type_sub_total = type_sub_total.toFixed(2);
+                            type_tot_GST = type_tot_GST.toFixed(2);
+                            type_total = type_total.toFixed(2);
+
+                            console.log('type Function: type ' + type);
+                            console.log('type Function: Index ' + type_name_set.indexOf(type))
+                            console.log('type Function: List ' + JSON.stringify(type_name_set));
+
+                            var type_list_length = type_name_set.length;
+                            if (type_list_length <= 1) {
+                                var previous_type_name = type_name_set[type_list_length - 1];
+                            } else {
+                                var previous_type_name = type_name_set[type_list_length - 2];
+                            }
+                            console.log('type Function: Pre-type Name ' + previous_type_name);
+                            var list_length = company_name_set.length;
+                            var previous_company_name = company_name_set[list_length - 1];
+
+                            var branch_list_length = branch_name_set.length;
+                            if (branch_list_length <= 1) {
+                                var previous_branch_name = branch_name_set[branch_list_length - 1];
+                            } else {
+                                var previous_branch_name = branch_name_set[branch_list_length - 2];
+                            }
+
+                            invDataSet.push([previous_company_name, '', '', previous_type_name + ' Total', '', '', '', '', type_tot_rate, type_sub_total, type_tot_GST, type_total])
+                            csvTableSet.push([previous_company_name, '', '', previous_type_name + ' Total', '', '', '', '', type_tot_rate, type_sub_total, type_tot_GST, type_total])
+
+                            // type_name_set = [];
+                            type_tot_rate_index = 1;
+                            type_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
+                            type_sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
+                            type_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
+                            type_total = parseFloat(gross.replace(/[]/g, '') * 1);
+                        }
+                    }
+                    if (company_name_set.indexOf(company_name) == -1 && type_name_set.indexOf(type) == 0) {
+                        console.log('type: End type');
+                        // type_name_set.push(type);
+                        type_tot_rate = (type_tot_rate / type_tot_rate_index);
+                        type_tot_rate = type_tot_rate.toFixed(2);
+                        type_sub_total = type_sub_total.toFixed(2);
+                        type_tot_GST = type_tot_GST.toFixed(2);
+                        type_total = type_total.toFixed(2);
+
+                        console.log('type End: type ' + type);
+                        console.log('type End: Index ' + type_name_set.indexOf(type))
+                        console.log('type End: List ' + JSON.stringify(type_name_set));
+
+                        var type_list_length = type_name_set.length;
+                        var previous_type_name = type_name_set[type_list_length - 1];
+                        console.log('type End: Pre-type Name First ' + previous_type_name);
+
+                        var state_list_length = state_name_set.length;
+                        var previous_state_name = state_name_set[state_list_length - 1];
+
+                        var list_length = company_name_set.length;
+                        var previous_company_name = company_name_set[list_length - 1];
+
+                        var location_list_length = location_name_set.length;
+                        var previous_location_name = location_name_set[location_list_length - 1]
+
+                        invDataSet.push([previous_company_name, '', '', previous_type_name + ' Total', '', '', '', '', type_tot_rate, type_sub_total, type_tot_GST, type_total])
+                        csvTableSet.push([previous_company_name, '', '', previous_type_name + ' Total', '', '', '', '', type_tot_rate, type_sub_total, type_tot_GST, type_total])
+
+                        type_name_set = [];
+                        type_tot_rate_index = 1;
+                        type_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
+                        type_sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
+                        type_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
+                        type_total = parseFloat(gross.replace(/[]/g, '') * 1);
+                    }
+                }
+
+                if ((company_name_set.indexOf(company_name) == -1 && index != 0) || index == (consolInvItemResultsLength - 1)) {
+                    /**
+                     * Totals
+                     */
+                    tot_rate = (tot_rate / tot_rate_index);
+                    tot_rate = tot_rate.toFixed(2);
+                    sub_total = sub_total.toFixed(2);
+                    tot_GST = tot_GST.toFixed(2);
+                    total = total.toFixed(2);
+
+                    var list_length = company_name_set.length;
+                    console.log('Company Name Set Length: ' + list_length)
+                    var previous_company_name = company_name_set[list_length - 1];
+                    console.log('Load New Line' + company_name_set, company_name, tot_rate, sub_total, tot_GST, total)
+                    company_name_set.push(company_name);
+
+                    var state_list_length = state_name_set.length;
+                    if (state_list_length <= 1) {
+                        var previous_state_name = state_name_set[state_list_length - 1];
+                    } else {
+                        var previous_state_name = state_name_set[state_list_length - 2];
+                    }
+
+                    // csvTaxSet.push(["Date* " + date +'\n'+  "Invoice #" + invoice_code +'\n'+ 'Due Date ' + due_date +'\n'+ 'ABN ' + abn +'\n'+ 'Customer PO# ' + po_box +'\n'+ 'Services From ' + service_from +'\n'+ 'Services To ' + service_to +'\n'+ 'Terms ' + terms]);
+                    // csvBillSet.push([billaddress]);
+                    // csvTotalSet.push([sub_total, tot_GST, total]);
+
+                    if (consol_method_id == 2 || consol_method_id == 4) {
+                        // var sub_parent_list_length = subparent_name_set.length;
+                        // var previous_sub_parent_name = sub_parent_name[sub_parent_list_length - 1];
+
+                        invDataSet.push([previous_company_name + ' Total', '', '', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
+                        csvTableSet.push([previous_company_name + ' Total', '', '', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
+                    } else {
+                        invDataSet.push([previous_company_name + ' Total', previous_state_name, '', '', '', '', '', '', tot_rate, sub_total, tot_GST, total]); //<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="' + company_id + '" class="downloadPDF btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit">Download Company Export</button>
+                        csvTableSet.push([previous_company_name + ' Total', previous_state_name, '', '', '', '', '', '', tot_rate, sub_total, tot_GST, total])
+                    }
+
+                    tot_rate_index = 1;
+                    tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
+                    sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
+                    tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
+                    total = parseFloat(gross.replace(/[]/g, '') * 1);
+
+                    branch_name_set = [];
+                    branch_tot_rate_index = 1;
+                    branch_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
+                    branch_sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
+                    branch_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
+                    branch_total = parseFloat(gross.replace(/[]/g, '') * 1);
+
+                    state_name_set = [];
+                    state_tot_rate_index = 1;
+                    state_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
+                    state_sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
+                    state_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
+                    state_total = parseFloat(gross.replace(/[]/g, '') * 1);
+
+                    type_name_set = [];
+                    type_tot_rate_index = 1;
+                    type_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
+                    type_sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
+                    type_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
+                    type_total = parseFloat(gross.replace(/[]/g, '') * 1);
+                }
+
+                if (consol_method_id == 2 || consol_method_id == 4) {
                     invDataSet.push([company_name, sub_parent_name, state, location, type, item, details, ref, qty, rate, amount, gst, gross, company_id]);
                     csvTableSet.push([company_name, sub_parent_name, state, location, type, item, details, ref_val, qty, rate, amount, gst, gross])
                 } else {
-                    if ((company_name_set.indexOf(company_name) == -1 && index != 0) || index == (consolInvItemResultsLength - 1)){
-                        tot_rate = tot_rate.toFixed(2);
-                        sub_total = sub_total.toFixed(2);
-                        tot_GST = tot_GST.toFixed(2);
-                        total = total.toFixed(2);
-
-                        var list_length = company_name_set.length;
-                        console.log('Company Name Set Length: ' + list_length)
-                        var previous_company_name = company_name_set[list_length - 1];
-                        console.log('Load New Line' + company_name_set, company_name, tot_rate, sub_total, tot_GST,total)
-                        company_name_set.push(company_name);
-
-                        // csvTaxSet.push(["Date* " + date +'\n'+  "Invoice #" + invoice_code +'\n'+ 'Due Date ' + due_date +'\n'+ 'ABN ' + abn +'\n'+ 'Customer PO# ' + po_box +'\n'+ 'Services From ' + service_from +'\n'+ 'Services To ' + service_to +'\n'+ 'Terms ' + terms]);
-                        // csvBillSet.push([billaddress]);
-                        // csvTotalSet.push([sub_total, tot_GST, total]);
-
-                        invDataSet.push([previous_company_name + ' Total', state, '','','','','<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="'+company_id+'" class="downloadPDF btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit">Download PDF</button>','', tot_rate, sub_total,tot_GST,total]);
-                        csvTableSet.push([previous_company_name + ' Total', state, '','','','','','', tot_rate, sub_total,tot_GST,total])
-                        // invDataSet.push(['','','','','','','','','','','','']);
-
-                        tot_rate = 0;
-                        sub_total = 0;
-                        tot_GST = 0;
-                        total = 0;
-                    }
                     invDataSet.push([company_name, state, location, type, item, details, ref, qty, rate, amount, gst, gross, company_id]);
                     csvTableSet.push([company_name, state, location, type, item, details, ref_val, qty, rate, amount, gst, gross])
                 }
@@ -1273,21 +1089,15 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
             datatable.rows.add(invDataSet);
             datatable.draw();
 
-            if (!isNullorEmpty(csvDataSet)){
+            if (!isNullorEmpty(csvDataSet)) {
                 saveCsv(csvDataSet); //exportDataSet
             }
 
             return true;
         }
 
-        function loadMultiParentScript(date_from, date_to, consol_method_id, period){
-            // clearInterval(load_record_interval);
-            // Looks every 15 seconds for the record linked to the parameters zee_id, date_from, date_to and timestamp.
-            // load_record_interval = setInterval(loadMPRecord, 15000, date_from, date_to, consol_method_id, period);
-            loadMPRecord(date_from, date_to, consol_method_id, period);
-        }
-        function loadMPRecord(date_from, date_to, consol_method_id, period){
-            var mpSearch = search.load({ type: 'customrecord_consol_inv_json' , id: 'customsearch_consol_inv_json' });
+        function loadMultiParentScript(date_from, date_to, consol_method_id, period) {
+            var mpSearch = search.load({ type: 'customrecord_consol_inv_json', id: 'customsearch_consol_inv_json' });
             console.log('Consol Method ID: ' + parseFloat(consol_method_id));
             mpSearch.filters.push(search.createFilter({
                 name: 'custrecord_consol_inv_method',
@@ -1295,26 +1105,26 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 values: consol_method_id + '.0'
             }))
             var mpResults = mpSearch.run().getRange({ start: 0, end: 1 });
-            
-            mpResults.forEach(function(mpItem){
+
+            mpResults.forEach(function (mpItem) {
                 var mpArray = mpItem.getValue({ name: 'custrecord_consol_inv_json' });
                 var mpObject = JSON.parse(mpArray);
                 mpObject.sort();
 
                 var csvArray = mpItem.getValue({ name: 'custrecord_consol_inv_csv' });
-                if (!csvArray){
+                if (!csvArray) {
                     csvArray = [];
                 } else {
                     var csvObject = JSON.parse(csvArray);
                     csvObject.sort();
                 }
-                
+
                 var datatable = $('#inv_preview').DataTable();
                 datatable.clear();
                 datatable.rows.add(mpObject);
                 datatable.draw();
 
-                if (!isNullorEmpty(csvObject)){
+                if (!isNullorEmpty(csvObject)) {
                     console.log('CSV: ' + csvObject)
                     saveCsv(csvObject); //exportDataSet
                 }
@@ -1335,9 +1145,13 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
             csvDataSet = csvDataSet[0];
             var title = 'Consolidated Invoice DataTable Info';
 
-            var headers = $('inv_preview').DataTable().columns().header().toArray().map(function(x) { return x.innerText });
+            var headers = $('inv_preview').DataTable().columns().header().toArray().map(function (x) { return x.innerText });
             headers = headers.slice(0, headers.length - 1).join(', ');
-            headers = ['Matched Parent','State', 'Location', 'Type', 'Item', 'Details', 'Ref#', 'Qty', 'Rate', 'Amount', 'Gst', 'Gross'];
+            if (consol_method_id == 4) {
+                headers = ['Matched Parent', 'Sub-Parent', 'State', 'Location', 'Type', 'Item', 'Details', 'Ref#', 'Qty', 'Rate', 'Amount', 'Gst', 'Gross'];
+            } else {
+                headers = ['Matched Parent', 'State', 'Location', 'Type', 'Item', 'Details', 'Ref#', 'Qty', 'Rate', 'Amount', 'Gst', 'Gross'];
+            }
 
             var csv = title;
             csv += "\n\n";
@@ -1356,10 +1170,13 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
             // csv += "\n\n";
 
             csv += headers + "\n";
-            csvDataSet[2].forEach(function(row) { // Table Data Set
+            csvDataSet[2].forEach(function (row) { // Table Data Set
                 // row[0] = $.parseHTML(row[0])[0].text;
                 // row[4] = financialToNumber(row[4]);
-                row[8] = "$" + row[8];
+                // row[8] = "$" + row[8];
+                if (consol_method_id == 2 || consol_method_id == 4) {
+                    row[5] = row[5].toString().replace(/,/g, '|');
+                }
                 csv += row.join(',');
                 csv += "\n";
             });
@@ -1388,26 +1205,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
             var content_type = 'text/csv';
             var csvFile = new Blob([csv], { type: content_type });
             var url = window.URL.createObjectURL(csvFile);
-            var filename = 'Consolidation_Invoice' + '.csv';
-            a.href = url;
-            a.download = filename;
-            a.click();
-            window.URL.revokeObjectURL(url);
-        }
-
-        function downloadPDF() {
-            console.log('Download PDF Has been Initiated');
-            
-            var pdfFile = currRec.getValue({ fieldId: 'custpage_' });
-
-            var a = document.createElement('a');
-            document.body.appendChild(a);
-            a.style = 'display: none';
-            var content_type = 'text/pdf';
-            var pdfFile = new Blob([pdf], { type: content_type });
-            var url = window.URL.createObjectURL(pdfFile);
-            var filename = 'consolidation_invoice_' + custname + '.pdf';
-            var filename = 'consolidation_invoice.pdf';
+            var filename = 'Consolidation_Invoice_' + consol_method + '.csv';
             a.href = url;
             a.download = filename;
             a.click();
@@ -1415,7 +1213,65 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
         }
 
         function saveRecord(context) {
-            console.log('Submit Save Record Clicked')
+            console.log('Submit Save Record');
+
+            var cust_id = currRec.getValue({ fieldId: 'custpage_consol_inv_cust_id' });
+            console.log('Submitter: Cust ID ' + cust_id);
+
+            if (!isNullorEmpty(csvDataSet)) {
+                saveExcel(csvDataSet); //exportDataSet
+            }
+
+            return true;
+        }
+
+        /**
+         * Create the CSV and store it in the hidden field 'custpage_table_csv' as a string.
+         * @param {Array} invDataSet The `invDataSet` created in `loadDatatable()`.
+         */
+        function saveExcel(csvDataSet) { //exportDataSet
+            csvDataSet = csvDataSet[0];
+            var title = 'Consolidated Invoice DataTable Info';
+
+            var headers = $('inv_preview').DataTable().columns().header().toArray().map(function (x) { return x.innerText });
+            headers = headers.slice(0, headers.length - 1).join(', ');
+            if (consol_method_id == 4) {
+                headers = ['Matched Parent', 'Sub-Parent', 'State', 'Location', 'Type', 'Item', 'Details', 'Ref#', 'Qty', 'Rate', 'Amount', 'Gst', 'Gross'];
+            } else {
+                headers = ['Matched Parent', 'State', 'Location', 'Type', 'Item', 'Details', 'Ref#', 'Qty', 'Rate', 'Amount', 'Gst', 'Gross'];
+            }
+
+            var csv = title;
+            csv += "\n\n";
+
+            console.log('CSV Data Set (STRING): ' + JSON.stringify(csvDataSet));
+
+            csvDataSet[0].forEach(function (row) { // Tax Info
+                csv += row;
+                csv += '\n';
+            });
+            csv += "\n\n";
+            csvDataSet[1].forEach(function (row) { // Bill Address
+                csv += row;
+                csv += '\n';
+            });
+            csv += "\n\n";
+
+            csv += headers + "\n";
+            csvDataSet[2].forEach(function (row) { // Table Data Set
+                // row[0] = $.parseHTML(row[0])[0].text;
+                // row[4] = financialToNumber(row[4]);
+                // row[8] = "$" + row[8];
+                csv += row.join(',');
+                csv += "\n";
+            });
+            csvDataSet[3].forEach(function (row) {
+                csv += row;
+                csv += '\n';
+            });
+
+            currRec.setValue({ fieldId: 'custpage_table_csv', value: csv })
+            // downloadCsv(csv);
 
             return true;
         }
@@ -1482,8 +1338,6 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
 
         return {
             pageInit: pageInit,
-            saveRecord: saveRecord,
-
+            // saveRecord: saveRecord,
         };
-
     });
