@@ -366,7 +366,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                         ],
                         columns: [
                             { title: 'Matched Parent' }, //0
-                            { title: 'State' },
+                            // { title: 'State' },
                             { title: 'Location' },
                             { title: 'Type' },
                             { title: 'Item' },
@@ -412,12 +412,12 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                     var dataTable = $('#inv_preview').DataTable({
                         data: invDataSet,
                         pageLength: 100,
-                        // order: [
-                        //     [0, 'asc'], [1, 'asc']
-                        // ],
+                        order: [
+                            [0, 'asc'], [3, 'asc']
+                        ],
                         columns: [
                             { title: 'Matched Parent' },
-                            { title: 'State' }, // 0
+                            // { title: 'State' }, // 0
                             { title: 'Location' }, // 1
                             { title: 'Type' }, // 2
                             { title: 'Item' }, // 3
@@ -458,9 +458,9 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 }
 
                 // if (consol_method_id == 2) {
-                // loadInvRecord(consol_method_id);
+                loadInvRecord(consol_method_id);
                 // } else {
-                loadMultiParentScript(date_from, date_to, consol_method_id, period);
+                // loadMultiParentScript(date_from, date_to, consol_method_id, period);
                 // }
 
                 console.log('Inv Data of Group: ' + invDataSet);
@@ -579,7 +579,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
             }
 
             var consolInvItemResultsLength = consolInvItemSearch.runPaged().count; // console.log('Result Length: ' + consolInvItemResultsLength);
-            var consolInvItemResults = consolInvItemSearch.run().getRange({ start: 0, end: 50 });
+            var consolInvItemResults = consolInvItemSearch.run().getRange({ start: 0, end: 25 });
             // console.log('Results: ' + JSON.parse(JSON.stringify(consolInvItemResults)));
             var company_name_set = [];
             var location_name_set = [];
@@ -605,11 +605,12 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                     subparent_name_set.push(sub_parent_name);
                 }
 
-                var type = line_item.getValue({ name: 'formulatext_1', formula: "DECODE({custbody_inv_type},'','Service','AP Products','Product',{custbody_inv_type})" });
+                // var type = line_item.getValue({ name: 'formulatext_1', formula: "DECODE({custbody_inv_type},'','Service','AP Products','Product',{custbody_inv_type})" });
+                var type = line_item.getText({ name: 'custbody_inv_type' });
                 if (isNullorEmpty(type)) {
                     var type = 'Service';
                 }
-                // var type = line_item.getValue({ name: 'custbody_inv_type'});
+
 
                 var company_name = line_item.getValue({ name: "formulatext", formula: '{customer.parent}' });
                 console.log('Company Name: ' + company_name);
@@ -764,7 +765,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                  *      }
                  *  }
                  */
-                if (consol_method_id == 1) {
+                if (consol_method_id == 1) { // Branch
                     if (branch_name_set.indexOf(location) != -1) {
                         branch_tot_rate += parseFloat(rate.replace(/[]/g, '') * 1);
                         branch_tot_rate_index++;
@@ -814,68 +815,76 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                         // }
                     }
                 } else if (consol_method_id == 2 || consol_method_id == 4) {
-                    if (subparent_name_set.indexOf(sub_parent_name) != -1) {
-                        console.log('State Index: ' + state_name_set.indexOf(state));
-                        console.log('State Array: ' + state_name_set)
+                    console.log('Sub-Parent Array: ' + JSON.stringify(subparent_name_set));
+                    // if (company_name_set.indexOf(company_name) != -1) {
+                    if (company_name_set.indexOf(company_name) != -1) { // if Company Name is in the list.
+                        if (subparent_name_set.indexOf(sub_parent_name) != -1) { // if Sub-Company Name is in the list.
+                            console.log('AONFPIAJWNEFUPBAWIDB AWD');
 
-                        if (!isNullorEmpty(state)) {
-                            if (state_name_set.indexOf(state) != -1) {
-                                state_tot_rate += parseFloat(rate.replace(/[]/g, '') * 1);
-                                state_tot_rate_index++;
-                                if (!isNullorEmpty(amount)) {
-                                    console.log('State: Amount' + amount);
-                                    state_sub_total += parseFloat(amount.replace(/[]/g, '') * 1);
-                                    console.log('State: Sub Total' + sub_total);
+                            console.log('State Index: ' + state_name_set.indexOf(state));
+                            console.log('State Array: ' + state_name_set)
+
+                            if (!isNullorEmpty(state)) { // If State is not Null
+                                if (state_name_set.indexOf(state) != -1) { // If State is in the list. Increment total amount
+                                    state_tot_rate += parseFloat(rate.replace(/[]/g, '') * 1);
+                                    state_tot_rate_index++;
+                                    if (!isNullorEmpty(amount)) {
+                                        console.log('State: Amount' + amount);
+                                        state_sub_total += parseFloat(amount.replace(/[]/g, '') * 1);
+                                        console.log('State: Sub Total' + sub_total);
+                                    }
+                                    state_tot_GST += parseFloat(gst.replace(/[]/g, '') * 1);
+                                    state_total += parseFloat(gross.replace(/[]/g, '') * 1);
+                                } else { // If state is not in the list, push new state, and push total data above.
+                                    console.log('State: New State');
+                                    state_name_set.push(state);
+
+                                    state_tot_rate = (state_tot_rate / state_tot_rate_index);
+                                    state_tot_rate = state_tot_rate.toFixed(2);
+                                    state_sub_total = state_sub_total.toFixed(2);
+                                    state_tot_GST = state_tot_GST.toFixed(2);
+                                    state_total = state_total.toFixed(2);
+
+                                    console.log('State Function: State ' + state);
+                                    console.log('State Function: Index ' + state_name_set.indexOf(state))
+                                    console.log('State Function: List ' + JSON.stringify(state_name_set));
+
+                                    var state_list_length = state_name_set.length;
+                                    if (state_list_length <= 1) {
+                                        var previous_state_name = state_name_set[state_list_length - 1];
+                                    } else {
+                                        var previous_state_name = state_name_set[state_list_length - 2];
+                                    }
+                                    console.log('State Function: Pre-State Name ' + previous_state_name);
+
+                                    var list_length = company_name_set.length;
+                                    var previous_company_name = company_name_set[list_length - 1];
+
+                                    var sub_parent_list_length = subparent_name_set.length;
+                                    if (sub_parent_list_length <= 1) {
+                                        var previous_sub_parent_name = subparent_name_set[sub_parent_list_length - 1];
+                                    } else {
+                                        var previous_sub_parent_name = subparent_name_set[sub_parent_list_length - 2];
+                                    }
+                                    console.log('State Function: Sub-Parent Name ' + previous_sub_parent_name);
+                                    console.log('State Function: Sub-Parent Array ' + subparent_name_set);
+
+                                    invDataSet.push([previous_company_name, previous_sub_parent_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
+                                    csvTableSet.push([previous_company_name, previous_sub_parent_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
+
+                                    // state_name_set = [];
+                                    state_tot_rate_index = 1;
+                                    state_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
+                                    state_sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
+                                    state_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
+                                    state_total = parseFloat(gross.replace(/[]/g, '') * 1);
                                 }
-                                state_tot_GST += parseFloat(gst.replace(/[]/g, '') * 1);
-                                state_total += parseFloat(gross.replace(/[]/g, '') * 1);
-                            } else {
-                                console.log('State: New State');
-                                state_name_set.push(state);
-
-                                state_tot_rate = (state_tot_rate / state_tot_rate_index);
-                                state_tot_rate = state_tot_rate.toFixed(2);
-                                state_sub_total = state_sub_total.toFixed(2);
-                                state_tot_GST = state_tot_GST.toFixed(2);
-                                state_total = state_total.toFixed(2);
-
-                                console.log('State Function: State ' + state);
-                                console.log('State Function: Index ' + state_name_set.indexOf(state))
-                                console.log('State Function: List ' + JSON.stringify(state_name_set));
-
-                                var state_list_length = state_name_set.length;
-                                if (state_list_length <= 1) {
-                                    var previous_state_name = state_name_set[state_list_length - 1];
-                                } else {
-                                    var previous_state_name = state_name_set[state_list_length - 2];
-                                }
-                                console.log('State Function: Pre-State Name ' + previous_state_name);
-                                var list_length = company_name_set.length;
-                                var previous_company_name = company_name_set[list_length - 1];
-
-                                // if (consol_method_id == 4){
-                                var sub_parent_list_length = subparent_name_set.length;
-                                var previous_sub_parent_name = sub_parent_name[sub_parent_list_length - 1];
-                                console.log('State Function: Sub-Parent Name ' + previous_sub_parent_name);
-                                console.log('State Function: Sub-Parent Array ' + sub_parent_name);
-
-                                invDataSet.push([previous_company_name, previous_sub_parent_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
-                                csvTableSet.push([previous_company_name, previous_sub_parent_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
-                                // } else {
-                                // invDataSet.push([previous_company_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
-                                // csvTableSet.push([previous_company_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
-                                // }
-
-                                state_name_set = [];
-                                state_tot_rate_index = 1;
-                                state_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
-                                state_sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
-                                state_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
-                                state_total = parseFloat(gross.replace(/[]/g, '') * 1);
                             }
                         }
+                    } else {
+                        console.log('State: Different Company');
                     }
-                    if ((company_name_set.indexOf(company_name) == -1 && state_name_set.indexOf(state) == 0)) {
+                    if ((subparent_name_set.indexOf(sub_parent_name) == -1)) { // If Sub-Parent Name is New. Display State Total
                         console.log('State: End State');
                         // state_name_set.push(state);
                         state_tot_rate = (state_tot_rate / state_tot_rate_index);
@@ -894,10 +903,20 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                         var list_length = company_name_set.length;
                         var previous_company_name = company_name_set[list_length - 1];
 
+                        subparent_name_set.push(sub_parent_name);
+
                         // invDataSet.push([previous_company_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
                         // csvTableSet.push([previous_company_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
+                    
                         var sub_parent_list_length = subparent_name_set.length;
-                        var previous_sub_parent_name = sub_parent_name[sub_parent_list_length - 1];
+                        if (sub_parent_list_length <= 1) {
+                            var previous_sub_parent_name = subparent_name_set[sub_parent_list_length - 1];
+                        } else {
+                            var previous_sub_parent_name = subparent_name_set[sub_parent_list_length - 2];
+                        }
+                        console.log('State Function: Sub-Parent Name ' + previous_sub_parent_name);
+                        console.log('State Function: Sub-Parent Array ' + subparent_name_set);
+
                         invDataSet.push([previous_company_name, previous_sub_parent_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
                         csvTableSet.push([previous_company_name, previous_sub_parent_name, previous_state_name + ' Total', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
 
@@ -907,59 +926,63 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                         state_sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
                         state_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
                         state_total = parseFloat(gross.replace(/[]/g, '') * 1);
+
+
                     }
                 } else if (consol_method_id == 3) {
-                    if (location_name_set.indexOf(location) != -1) {
-                        if (type_name_set.indexOf(type) != -1) {
-                            type_tot_rate += parseFloat(rate.replace(/[]/g, '') * 1);
-                            type_tot_rate_index++;
-                            if (!isNullorEmpty(amount)) {
-                                console.log('type: Amount' + amount);
-                                type_sub_total += parseFloat(amount.replace(/[]/g, '') * 1);
-                                console.log('type: Sub Total' + sub_total);
-                            }
-                            type_tot_GST += parseFloat(gst.replace(/[]/g, '') * 1);
-                            type_total += parseFloat(gross.replace(/[]/g, '') * 1);
-                        } else {
-                            console.log('type: New type');
-                            type_name_set.push(type);
-
-                            type_tot_rate = (type_tot_rate / type_tot_rate_index);
-                            type_tot_rate = type_tot_rate.toFixed(2);
-                            type_sub_total = type_sub_total.toFixed(2);
-                            type_tot_GST = type_tot_GST.toFixed(2);
-                            type_total = type_total.toFixed(2);
-
-                            console.log('type Function: type ' + type);
-                            console.log('type Function: Index ' + type_name_set.indexOf(type))
-                            console.log('type Function: List ' + JSON.stringify(type_name_set));
-
-                            var type_list_length = type_name_set.length;
-                            if (type_list_length <= 1) {
-                                var previous_type_name = type_name_set[type_list_length - 1];
+                    if (company_name_set.indexOf(company_name) != -1) {
+                        if (location_name_set.indexOf(location) != -1) {
+                            if (type_name_set.indexOf(type) != -1) {
+                                type_tot_rate += parseFloat(rate.replace(/[]/g, '') * 1);
+                                type_tot_rate_index++;
+                                if (!isNullorEmpty(amount)) {
+                                    console.log('type: Amount' + amount);
+                                    type_sub_total += parseFloat(amount.replace(/[]/g, '') * 1);
+                                    console.log('type: Sub Total' + sub_total);
+                                }
+                                type_tot_GST += parseFloat(gst.replace(/[]/g, '') * 1);
+                                type_total += parseFloat(gross.replace(/[]/g, '') * 1);
                             } else {
-                                var previous_type_name = type_name_set[type_list_length - 2];
+                                console.log('type: New type');
+                                type_name_set.push(type);
+
+                                type_tot_rate = (type_tot_rate / type_tot_rate_index);
+                                type_tot_rate = type_tot_rate.toFixed(2);
+                                type_sub_total = type_sub_total.toFixed(2);
+                                type_tot_GST = type_tot_GST.toFixed(2);
+                                type_total = type_total.toFixed(2);
+
+                                console.log('type Function: type ' + type);
+                                console.log('type Function: Index ' + type_name_set.indexOf(type))
+                                console.log('type Function: List ' + JSON.stringify(type_name_set));
+
+                                var type_list_length = type_name_set.length;
+                                if (type_list_length <= 1) {
+                                    var previous_type_name = type_name_set[type_list_length - 1];
+                                } else {
+                                    var previous_type_name = type_name_set[type_list_length - 2];
+                                }
+                                console.log('type Function: Pre-type Name ' + previous_type_name);
+                                var list_length = company_name_set.length;
+                                var previous_company_name = company_name_set[list_length - 1];
+
+                                var branch_list_length = branch_name_set.length;
+                                if (branch_list_length <= 1) {
+                                    var previous_branch_name = branch_name_set[branch_list_length - 1];
+                                } else {
+                                    var previous_branch_name = branch_name_set[branch_list_length - 2];
+                                }
+
+                                invDataSet.push([previous_company_name, '', previous_type_name + ' Total', '', '', '', '', type_tot_rate, type_sub_total, type_tot_GST, type_total]) //'', 
+                                csvTableSet.push([previous_company_name,  '', previous_type_name + ' Total', '', '', '', '', type_tot_rate, type_sub_total, type_tot_GST, type_total]) //'',
+
+                                // type_name_set = [];
+                                type_tot_rate_index = 1;
+                                type_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
+                                type_sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
+                                type_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
+                                type_total = parseFloat(gross.replace(/[]/g, '') * 1);
                             }
-                            console.log('type Function: Pre-type Name ' + previous_type_name);
-                            var list_length = company_name_set.length;
-                            var previous_company_name = company_name_set[list_length - 1];
-
-                            var branch_list_length = branch_name_set.length;
-                            if (branch_list_length <= 1) {
-                                var previous_branch_name = branch_name_set[branch_list_length - 1];
-                            } else {
-                                var previous_branch_name = branch_name_set[branch_list_length - 2];
-                            }
-
-                            invDataSet.push([previous_company_name, '', '', previous_type_name + ' Total', '', '', '', '', type_tot_rate, type_sub_total, type_tot_GST, type_total])
-                            csvTableSet.push([previous_company_name, '', '', previous_type_name + ' Total', '', '', '', '', type_tot_rate, type_sub_total, type_tot_GST, type_total])
-
-                            // type_name_set = [];
-                            type_tot_rate_index = 1;
-                            type_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
-                            type_sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
-                            type_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
-                            type_total = parseFloat(gross.replace(/[]/g, '') * 1);
                         }
                     }
                     if (company_name_set.indexOf(company_name) == -1 && type_name_set.indexOf(type) == 0) {
@@ -988,8 +1011,8 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                         var location_list_length = location_name_set.length;
                         var previous_location_name = location_name_set[location_list_length - 1]
 
-                        invDataSet.push([previous_company_name, '', '', previous_type_name + ' Total', '', '', '', '', type_tot_rate, type_sub_total, type_tot_GST, type_total])
-                        csvTableSet.push([previous_company_name, '', '', previous_type_name + ' Total', '', '', '', '', type_tot_rate, type_sub_total, type_tot_GST, type_total])
+                        invDataSet.push([previous_company_name, '', previous_type_name + ' Total', '', '', '', '', type_tot_rate, type_sub_total, type_tot_GST, type_total]) //'',
+                        csvTableSet.push([previous_company_name, '', previous_type_name + ' Total', '', '', '', '', type_tot_rate, type_sub_total, type_tot_GST, type_total]) //'',
 
                         type_name_set = [];
                         type_tot_rate_index = 1;
@@ -1000,7 +1023,9 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                     }
                 }
 
-                if ((company_name_set.indexOf(company_name) == -1 && index != 0) || index == (consolInvItemResultsLength - 1)) {
+                console.log('State Index Outside of Loops: ' + state_name_set.indexOf(state));
+
+                if ((company_name_set.indexOf(company_name) == -1 && index != 0) || index == (consolInvItemResultsLength - 1)) { // When Company Name is New
                     /**
                      * Totals
                      */
@@ -1015,6 +1040,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                     var previous_company_name = company_name_set[list_length - 1];
                     console.log('Load New Line' + company_name_set, company_name, tot_rate, sub_total, tot_GST, total)
                     company_name_set.push(company_name);
+
 
                     var state_list_length = state_name_set.length;
                     if (state_list_length <= 1) {
@@ -1034,8 +1060,8 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                         invDataSet.push([previous_company_name + ' Total', '', '', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
                         csvTableSet.push([previous_company_name + ' Total', '', '', '', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total])
                     } else {
-                        invDataSet.push([previous_company_name + ' Total', previous_state_name, '', '', '', '', '', '', tot_rate, sub_total, tot_GST, total]); //<button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="' + company_id + '" class="downloadPDF btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit">Download Company Export</button>
-                        csvTableSet.push([previous_company_name + ' Total', previous_state_name, '', '', '', '', '', '', tot_rate, sub_total, tot_GST, total])
+                        invDataSet.push([previous_company_name + ' Total', '', '', '', '', '', '', tot_rate, sub_total, tot_GST, total]); // previous_state_name, | <button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="' + company_id + '" class="downloadPDF btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit">Download Company Export</button>
+                        csvTableSet.push([previous_company_name + ' Total', '', '', '', '', '', '', tot_rate, sub_total, tot_GST, total]) //previous_state_name,
                     }
 
                     tot_rate_index = 1;
@@ -1053,6 +1079,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
 
                     state_name_set = [];
                     state_tot_rate_index = 1;
+                    subparent_name_set = [];
                     state_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
                     state_sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
                     state_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
@@ -1066,12 +1093,12 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                     type_total = parseFloat(gross.replace(/[]/g, '') * 1);
                 }
 
-                if (consol_method_id == 2 || consol_method_id == 4) {
+                if (consol_method_id == 2 || consol_method_id == 4) { // Actual Data for that line.
                     invDataSet.push([company_name, sub_parent_name, state, location, type, item, details, ref, qty, rate, amount, gst, gross, company_id]);
                     csvTableSet.push([company_name, sub_parent_name, state, location, type, item, details, ref_val, qty, rate, amount, gst, gross])
                 } else {
-                    invDataSet.push([company_name, state, location, type, item, details, ref, qty, rate, amount, gst, gross, company_id]);
-                    csvTableSet.push([company_name, state, location, type, item, details, ref_val, qty, rate, amount, gst, gross])
+                    invDataSet.push([company_name, location, type, item, details, ref, qty, rate, amount, gst, gross, company_id]); //state,
+                    csvTableSet.push([company_name, location, type, item, details, ref_val, qty, rate, amount, gst, gross]) //state,
                 }
 
                 if (isNullorEmpty(csvDataSet)) {
@@ -1175,7 +1202,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 // row[4] = financialToNumber(row[4]);
                 // row[8] = "$" + row[8];
                 if (consol_method_id == 2 || consol_method_id == 4) {
-                    row[5] = row[5].toString().replace(/,/g, '|');
+                    row[6] = row[6].toString().replace(/,/g, '|');
                 }
                 csv += row.join(',');
                 csv += "\n";
