@@ -39,23 +39,22 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                     var params = JSON.parse(context.request.parameters.custparam_params);
                 }
                 
-
-                var date_from = context.request.parameters.custpage_consol_inv_date_from;
-                if (!date_from){
-                    date_from = '';
-                }
-                log.debug({
-                    title: 'date_from',
-                    details: date_from
-                })
-                var date_to = context.request.parameters.custpage_consol_inv_date_to;
-                if (!date_to){
-                    date_to = '';
-                }
-                log.debug({
-                    title: 'date_to',
-                    details: date_to
-                })
+                // var date_from = context.request.parameters.custpage_consol_inv_date_from;
+                // if (!date_from){
+                //     date_from = '';
+                // }
+                // log.debug({
+                //     title: 'date_from',
+                //     details: date_from
+                // })
+                // var date_to = context.request.parameters.custpage_consol_inv_date_to;
+                // if (!date_to){
+                //     date_to = '';
+                // }
+                // log.debug({
+                //     title: 'date_to',
+                //     details: date_to
+                // })
                 
                 var zee_id;
                 var custid;
@@ -193,45 +192,45 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                     layoutType: ui.FieldLayoutType.STARTROW
                 }).defaultValue = inlineHtml;
 
-                form.addField({
-                    id: 'custpage_consol_inv_zee',
-                    label: 'Zee ID',
-                    type: ui.FieldType.TEXT
-                }).updateDisplayType({
-                    displayType: ui.FieldDisplayType.HIDDEN
-                }).defaultValue = zee_id;
+                // form.addField({
+                //     id: 'custpage_consol_inv_zee',
+                //     label: 'Zee ID',
+                //     type: ui.FieldType.TEXT
+                // }).updateDisplayType({
+                //     displayType: ui.FieldDisplayType.HIDDEN
+                // }).defaultValue = zee_id;
 
-                form.addField({
-                    id: 'custpage_consol_inv_custid',
-                    label: 'Customer ID',
-                    type: ui.FieldType.TEXT
-                }).updateDisplayType({
-                    displayType: ui.FieldDisplayType.HIDDEN
-                }).defaultValue = custid;
+                // form.addField({
+                //     id: 'custpage_consol_inv_custid',
+                //     label: 'Customer ID',
+                //     type: ui.FieldType.TEXT
+                // }).updateDisplayType({
+                //     displayType: ui.FieldDisplayType.HIDDEN
+                // }).defaultValue = custid;
 
-                form.addField({
-                    id: 'custpage_consol_inv_custname',
-                    label: 'Customer Name',
-                    type: ui.FieldType.TEXT
-                }).updateDisplayType({
-                    displayType: ui.FieldDisplayType.HIDDEN
-                }).defaultValue = custname;
+                // form.addField({
+                //     id: 'custpage_consol_inv_custname',
+                //     label: 'Customer Name',
+                //     type: ui.FieldType.TEXT
+                // }).updateDisplayType({
+                //     displayType: ui.FieldDisplayType.HIDDEN
+                // }).defaultValue = custname;
 
-                form.addField({
-                    id: 'custpage_consol_inv_sub_custid',
-                    label: 'Sub-Customer ID',
-                    type: ui.FieldType.TEXT
-                }).updateDisplayType({
-                    displayType: ui.FieldDisplayType.HIDDEN
-                }).defaultValue = sub_custid;
+                // form.addField({
+                //     id: 'custpage_consol_inv_sub_custid',
+                //     label: 'Sub-Customer ID',
+                //     type: ui.FieldType.TEXT
+                // }).updateDisplayType({
+                //     displayType: ui.FieldDisplayType.HIDDEN
+                // }).defaultValue = sub_custid;
 
-                form.addField({
-                    id: 'custpage_consol_inv_sub_subcustid',
-                    label: 'Sub-Sub Customer ID',
-                    type: ui.FieldType.TEXT
-                }).updateDisplayType({
-                    displayType: ui.FieldDisplayType.HIDDEN
-                }).defaultValue = sub_subcustid;
+                // form.addField({
+                //     id: 'custpage_consol_inv_sub_subcustid',
+                //     label: 'Sub-Sub Customer ID',
+                //     type: ui.FieldType.TEXT
+                // }).updateDisplayType({
+                //     displayType: ui.FieldDisplayType.HIDDEN
+                // }).defaultValue = sub_subcustid;
 
                 form.addField({
                     id: 'custpage_consol_inv_method_id',
@@ -249,21 +248,21 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                     displayType: ui.FieldDisplayType.HIDDEN
                 }).defaultValue = period;
 
-                form.addField({
-                    id: 'custpage_consol_inv_date_from',
-                    label: 'Date From',
-                    type: ui.FieldType.TEXT
-                }).updateDisplayType({
-                    displayType: ui.FieldDisplayType.HIDDEN
-                }).defaultValue = date_from;
+                // form.addField({
+                //     id: 'custpage_consol_inv_date_from',
+                //     label: 'Date From',
+                //     type: ui.FieldType.TEXT
+                // }).updateDisplayType({
+                //     displayType: ui.FieldDisplayType.HIDDEN
+                // }).defaultValue = date_from;
 
-                form.addField({
-                    id: 'custpage_consol_inv_date_to',
-                    label: 'Date To',
-                    type: ui.FieldType.TEXT
-                }).updateDisplayType({
-                    displayType: ui.FieldDisplayType.HIDDEN
-                }).defaultValue = date_to;
+                // form.addField({
+                //     id: 'custpage_consol_inv_date_to',
+                //     label: 'Date To',
+                //     type: ui.FieldType.TEXT
+                // }).updateDisplayType({
+                //     displayType: ui.FieldDisplayType.HIDDEN
+                // }).defaultValue = date_to;
 
                 form.addField({
                     id: 'custpage_table_csv',
@@ -289,8 +288,8 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 var sub_custid = parseInt(context.request.parameters.custpage_consol_inv_sub_custid);
                 // var zee_id = parseInt(context.request.parameters.custpage_consol_inv_zee);
                 var period = parseInt(context.request.parameters.custpage_consol_inv_period);
-                var date_from = context.request.parameters.custpage_consol_inv_date_from;
-                var date_to = context.request.parameters.custpage_consol_inv_date_to;
+                // var date_from = context.request.parameters.custpage_consol_inv_date_from;
+                // var date_to = context.request.parameters.custpage_consol_inv_date_to;
 
                 log.debug({
                     title: 'Parameter: Method ID',
@@ -303,8 +302,8 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                     custscript_consol_inv_sub_custid_1: sub_custid,
                     custscript_consol_inv_method_id_1: consol_method_id,
                     custscript_consol_inv_period_1: period,
-                    custscript_consol_inv_date_from_1: date_from,
-                    custscript_consol_inv_date_to_1: date_to
+                    // custscript_consol_inv_date_from_1: date_from,
+                    // custscript_consol_inv_date_to_1: date_to
                 }
                 var scriptTask = task.create({
                     taskType: task.TaskType.SCHEDULED_SCRIPT,
