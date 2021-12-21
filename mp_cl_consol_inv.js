@@ -233,9 +233,9 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 }
 
                 // if (consol_method_id == 4) {
-                    // loadInvRecord(consol_method_id);
+                loadInvRecord(consol_method_id);
                 // } else {
-                    loadMultiParentScript(consol_method_id, period);
+                // loadMultiParentScript(consol_method_id, period);
                 // }
             });
 
@@ -247,10 +247,9 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 downloadCsv();
             });
 
-            $(document).on('click', '.downloadCompExcel', function(){
+            $(document).on('click', '.downloadCompExcel', function () {
                 var company_number = $(this).id();
 
-                
             })
 
             // $('.downloadPDF').click(function () {
@@ -321,30 +320,46 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
             }
             else if (consol_method_id == 4) {
                 var consolInvItemSearch = search.load({
-                    type: 'invoice',
-                    id: 'customsearch_consol_inv_lineitem_5'
+                    type: 'customer',
+                    id: 'customsearch_consol_inv_custinv_multi'
                 });
             }
 
             // console.log('Consolidation Method ID: ' + parseInt(consol_method_id));
-
-            consolInvItemSearch.filters.push(search.createFilter({
-                name: 'custentity_inv_consolidation_mtd',
-                join: 'customer',
-                operator: search.Operator.ANYOF,
-                values: parseInt(consol_method_id)
-            }));
-            if (consol_method_id) {
-                consolInvItemSearch.columns.push(search.createColumn({
-                    name: "formulatext",
-                    formula: "{customer.parent}",
-                    label: "Formula (Text)",
-                    sort: search.Sort.ASC
+            if (consol_method_id == 1 || consol_method_id == 3){
+                consolInvItemSearch.filters.push(search.createFilter({
+                    name: 'custentity_inv_consolidation_mtd',
+                    join: 'customer',
+                    operator: search.Operator.ANYOF,
+                    values: parseInt(consol_method_id)
                 }));
+                if (consol_method_id) {
+                    consolInvItemSearch.columns.push(search.createColumn({
+                        name: "formulatext",
+                        formula: "{customer.parent}",
+                        label: "Formula (Text)",
+                        sort: search.Sort.ASC
+                    }));
+                }
+            } else {
+                if (consol_method_id == 4){
+                    consolInvItemSearch.filters.push(search.createFilter({
+                        name: 'custentity_inv_consolidation_mtd',
+                        operator: search.Operator.ANYOF,
+                        values: parseInt(consol_method_id)
+                    }));  
+                } else {
+                    consolInvItemSearch.filters.push(search.createFilter({
+                        name: 'custentity_inv_consolidation_mtd',
+                        join: 'customer',
+                        operator: search.Operator.ANYOF,
+                        values: parseInt(consol_method_id)
+                    }));
+                }
             }
 
             var consolInvItemResultsLength = consolInvItemSearch.runPaged().count; // console.log('Result Length: ' + consolInvItemResultsLength);
-            var consolInvItemResults = consolInvItemSearch.run().getRange({ start: 0, end: 150 });
+            var consolInvItemResults = consolInvItemSearch.run().getRange({ start: 240, end: 250 });
             // console.log('Results: ' + JSON.parse(JSON.stringify(consolInvItemResults)));
             var company_name_set = [];
             var location_name_set = [];
@@ -352,20 +367,24 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
             var state_name_set = [];
             var type_name_set = [];
             var subparent_name_set = []
+            var invoice_set = [];
 
             var index = 0;
             consolInvItemResults.forEach(function (line_item) {
                 console.log('_________________________________________')
                 console.log('Index Value: ' + index);
 
-                var gross = line_item.getValue({ name: "formulacurrency", formula: '{amount}+{taxamount}' });
-                if (gross == 0 || gross == '0.00' || gross == '.00'){
-                    return true;
-                }
+                if (consol_method_id == 1 || consol_method_id == 3) { // If Branch and Invoice Type, Use Search Get Result Type 1. Else use Search Get Result Type 2 
+                    var gross = line_item.getValue({ name: "formulacurrency", formula: '{amount}+{taxamount}' });
+                    if (gross == 0 || gross == '0.00' || gross == '.00') {
+                        return true;
+                    }
 
-                var invoice_id = line_item.getValue({ name: 'internalid' });
-                var cust_id = line_item.getValue({ name: 'internalid', join: 'customer' });
-                if (consol_method_id == 2 || consol_method_id == 4) {
+                    var invoice_id = line_item.getValue({ name: 'internalid' });
+                    console.log('Invoice ID: ' + invoice_id)
+                    invoice_set.push(invoice_id);
+                    var cust_id = line_item.getValue({ name: 'internalid', join: 'customer' });
+
                     var subCustRecord = record.load({ type: 'customer', id: cust_id });
                     var sub_parent_id = subCustRecord.getValue({ fieldId: 'parent' })
                     var SubParentRecord = record.load({ type: 'customer', id: sub_parent_id });
@@ -373,137 +392,284 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                     console.log('Sub Parent: ' + sub_parent_name);
 
 
-                    if (index == 0){
+                    if (index == 0) {
                         subparent_name_set.push(sub_parent_name);
                     }
-                }
-
-                // var type = line_item.getValue({ name: 'formulatext_1', formula: "DECODE({custbody_inv_type},'','Service','AP Products','Product',{custbody_inv_type})" });
-                var type = line_item.getText({ name: 'custbody_inv_type' });
-                if (isNullorEmpty(type)) {
-                    type = 'Service';
-                }
 
 
-                var company_name = line_item.getValue({ name: "formulatext", formula: '{customer.parent}' });
-                console.log('Company Name: ' + company_name);
-                var company_id = company_name.split(" ")[0];
-                var company_id_length = parseInt(company_name.split(" ")[0].length);
-                company_name = company_name.slice(company_id_length + 1);
+                    // var type = line_item.getValue({ name: 'formulatext_1', formula: "DECODE({custbody_inv_type},'','Service','AP Products','Product',{custbody_inv_type})" });
+                    var type = line_item.getText({ name: 'custbody_inv_type' });
+                    if (isNullorEmpty(type)) {
+                        type = 'Service';
+                    }
 
-                if (index == 0) {
-                    company_name_set.push(company_name);
-                    // csvTaxSet.push(["Date* " + date + '\n' + "Invoice #" + invoice_code + '\n' + 'Due Date ' + due_date + '\n' + 'ABN ' + abn + '\n' + 'Customer PO# ' + po_box + '\n' + 'Services From ' + service_from + '\n' + 'Services To ' + service_to + '\n' + 'Terms ' + terms]);
-                    // csvBillSet.push([billaddress]);
-                }
 
-                /**
-                 *  Tax Invoice Header
-                 */
-                var date = line_item.getValue({ name: 'trandate' });
-                var date_object = new Date();
-                //Invoice Number - Code + Year Number + Month Number (ie: 'CODE'2104)
-                var location = line_item.getValue({ name: 'companyname', join: 'customer' });
-                var year = JSON.stringify(date_object.getFullYear()).split('');
-                var year_code = year[2] + year[3];
-                var month = date_object.getMonth();
-                if (month < 10) {
-                    var month_code = '0' + month;
-                } else {
-                    var month_code = month;
-                }
-                var name_match = JSON.stringify(location).match(/\b(\w)/g);
-                var name_code = name_match.join('');
-                var invoice_code = name_code + year_code + month_code
+                    var company_name = line_item.getValue({ name: "formulatext", formula: '{customer.parent}' });
+                    console.log('Company Name: ' + company_name);
+                    var company_id = company_name.split(" ")[0];
+                    var company_id_length = parseInt(company_name.split(" ")[0].length);
+                    company_name = company_name.slice(company_id_length + 1);
 
-                var due_date = line_item.getValue({ name: 'duedate' })
-                var abn = '45 609 801 194'; // MailPlus ABN
-                //var abn = line_item.getValue({ name: 'custbody_franchisee_abn'} });
-                var po_box = line_item.getValue({ name: 'custentity11', join: 'customer' });
-                var service_from = line_item.getValue({ name: 'custbody_inv_date_range_from' });
-                service_from = date_from;
-                var service_to = line_item.getValue({ name: 'custbody_inv_date_range_to' });
-                service_to = date_to;
-                var terms = line_item.getValue({ name: 'terms' });
+                    if (index == 0) {
+                        company_name_set.push(company_name);
+                        // csvTaxSet.push(["Date* " + date + '\n' + "Invoice #" + invoice_code + '\n' + 'Due Date ' + due_date + '\n' + 'ABN ' + abn + '\n' + 'Customer PO# ' + po_box + '\n' + 'Services From ' + service_from + '\n' + 'Services To ' + service_to + '\n' + 'Terms ' + terms]);
+                        // csvBillSet.push([billaddress]);
+                    }
 
-                /**
-                 *  Bill To Header
-                 */
-                 var billaddress = line_item.getValue({ name: 'billaddress' });
-
-                // if (company_name_set.indexOf(company_name) == -1) {
-                    
-                // }
-
-                /**
-                 *  Table
-                 */
-                // var location = line_item.getValue({ name: 'billaddressee' }); // companyname
-                location_name_set.push(location);
-
-                var item_id = line_item.getValue({ name: 'item' });
-                var item = '';
-                // Item Record
-                if (!isNullorEmpty(item_id)) {
-                    var service_type = '';
-                    if (type == 'MPEX Products'){
-                        service_type = "noninventoryitem";
+                    /**
+                     *  Tax Invoice Header
+                     */
+                    var date = line_item.getValue({ name: 'trandate' });
+                    var date_object = new Date();
+                    //Invoice Number - Code + Year Number + Month Number (ie: 'CODE'2104)
+                    var location = line_item.getValue({ name: 'companyname', join: 'customer' });
+                    var year = JSON.stringify(date_object.getFullYear()).split('');
+                    var year_code = year[2] + year[3];
+                    var month = date_object.getMonth();
+                    if (month < 10) {
+                        var month_code = '0' + month;
                     } else {
-                        service_type = 'serviceitem'
+                        var month_code = month;
                     }
-                    var itemRecord = record.load({
-                        type: service_type,
-                        id: item_id
-                    });
-                    if (!isNullorEmpty(itemRecord)) {
-                        item = itemRecord.getValue({ fieldId: 'itemid' });
+                    var name_match = JSON.stringify(location).match(/\b(\w)/g);
+                    var name_code = name_match.join('');
+                    var invoice_code = name_code + year_code + month_code
+
+                    var due_date = line_item.getValue({ name: 'duedate' })
+                    var abn = '45 609 801 194'; // MailPlus ABN
+                    //var abn = line_item.getValue({ name: 'custbody_franchisee_abn'} });
+                    var po_box = line_item.getValue({ name: 'custentity11', join: 'customer' });
+                    var service_from = line_item.getValue({ name: 'custbody_inv_date_range_from' });
+                    // service_from = date_from;
+                    var service_to = line_item.getValue({ name: 'custbody_inv_date_range_to' });
+                    // service_to = date_to;
+                    var terms = line_item.getValue({ name: 'terms' });
+
+                    /**
+                     *  Bill To Header
+                     */
+                    var billaddress = line_item.getValue({ name: 'billaddress' });
+
+                    // if (company_name_set.indexOf(company_name) == -1) {
+
+                    // }
+
+                    /**
+                     *  Table
+                     */
+                    // var location = line_item.getValue({ name: 'billaddressee' }); // companyname
+                    location_name_set.push(location);
+
+                    var item_id = line_item.getValue({ name: 'item' });
+                    var item = '';
+                    // Item Record
+                    if (!isNullorEmpty(item_id)) {
+                        console.log('Item ID: ' + item_id + "\n" + 'Item Type: ' + type)
+                        var service_type = '';
+                        if (type == 'MPEX Products' || parseInt(item_id) == 108) {
+                            service_type = "noninventoryitem";
+                        } else {
+                            service_type = 'serviceitem'
+                        }
+                        var itemRecord = record.load({
+                            type: service_type,
+                            id: item_id
+                        });
+                        if (!isNullorEmpty(itemRecord)) {
+                            item = itemRecord.getValue({ fieldId: 'itemid' });
+                        }
+                        console.log('item: ' + item)
                     }
-                    console.log('item: ' + item)
-                }
-                //  var item = 'Counter Bankings';
-                var details = line_item.getText({ name: 'custcol1' });
+                    //  var item = 'Counter Bankings';
+                    var details = line_item.getText({ name: 'custcol1' });
 
-                var ref_val = line_item.getValue({ name: 'tranid' })
-                var upload_url_inv = '/app/accounting/transactions/custinvc.nl?id=';
-                var ref = '<a href="' + baseURL + upload_url_inv + invoice_id + '" target="_blank">' + ref_val + '</a>';
-                var qty = line_item.getValue({ name: 'quantity' })
-                var rate = line_item.getValue({ name: 'rate' })
-                var amount = line_item.getValue({ name: 'amount' });
-                var gst = line_item.getValue({ name: 'taxamount' });
-                
-                // var state = line_item.getValue({ name: 'billstate' }); // location
-                var state = line_item.getText({ name: 'location', join: 'custbody_franchisee' });
-                console.log('State: '+ state)
-                if (index == 0) {
-                    state_name_set.push(state);
-                    branch_name_set.push(location);
-
-                    csvOrder.push(invoice_code);
-                }
-                // if (state_tot_rate_index == 1) {
-                //     state_name_set.push(state);
-                // }
-                if (branch_tot_rate_index == 1) {
-                    branch_name_set.push(location);
-                }
-                if (type_tot_rate_index == 1) {
-                    type_name_set.push(type);
-                }
-
-                if (company_name_set.indexOf(company_name) != -1) {
-                    tot_rate += parseFloat(rate.replace(/[]/g, '') * 1);
-                    tot_rate_index++;
-                    if (!isNullorEmpty(amount)) {
-                        // console.log('Amount' + amount)
-                        sub_total += parseFloat(amount.replace(/[]/g, '') * 1);
-                        // console.log('Sub Total' + sub_total)
+                    var ref_val = line_item.getValue({ name: 'tranid' })
+                    var upload_url_inv = '/app/accounting/transactions/custinvc.nl?id=';
+                    var ref = '<a href="' + baseURL + upload_url_inv + invoice_id + '" target="_blank">' + ref_val + '</a>';
+                    var qty = line_item.getValue({ name: 'quantity' })
+                    var rate = line_item.getValue({ name: 'rate' });
+                    if (isNullorEmpty(rate)){
+                        rate = 0;
                     }
-                    tot_GST += parseFloat(gst.replace(/[]/g, '') * 1);
-                    total += parseFloat(gross.replace(/[]/g, '') * 1);
-                }
+                    var amount = line_item.getValue({ name: 'amount' });
+                    var gst = line_item.getValue({ name: 'taxamount' });
 
-                if (isNullorEmpty(gross)) {
-                    type += ' Total'
+                    // var state = line_item.getValue({ name: 'billstate' }); // location
+                    var state = line_item.getText({ name: 'location', join: 'custbody_franchisee' });
+                    console.log('State: ' + state)
+                    if (index == 0) {
+                        state_name_set.push(state);
+                        branch_name_set.push(location);
+
+                        csvOrder.push(invoice_code);
+                    }
+                    // if (state_tot_rate_index == 1) {
+                    //     state_name_set.push(state);
+                    // }
+                    if (branch_tot_rate_index == 1) {
+                        branch_name_set.push(location);
+                    }
+                    if (type_tot_rate_index == 1) {
+                        type_name_set.push(type);
+                    }
+
+                    if (company_name_set.indexOf(company_name) != -1) {
+                        tot_rate += parseFloat(rate.replace(/[]/g, '') * 1);
+                        tot_rate_index++;
+                        if (!isNullorEmpty(amount)) {
+                            // console.log('Amount' + amount)
+                            sub_total += parseFloat(amount.replace(/[]/g, '') * 1);
+                            // console.log('Sub Total' + sub_total)
+                        }
+                        tot_GST += parseFloat(gst.replace(/[]/g, '') * 1);
+                        total += parseFloat(gross.replace(/[]/g, '') * 1);
+                    }
+
+                    if (isNullorEmpty(gross)) {
+                        type += ' Total'
+                    }
+                } else {
+                    var gross = line_item.getValue({ name: "formulacurrency", formula: '{transaction.amount}+{transaction.taxamount}' });
+                    if (gross == 0 || gross == '0.00' || gross == '.00') {
+                        return true;
+                    }
+
+                    var invoice_id = line_item.getValue({ name: 'internalid', join: "transaction" });
+                    invoice_set.push(invoice_id);
+
+                    var sub_parent_name = line_item.getValue({ name: 'companyname', join: 'parentCustomer' });
+                    console.log('Sub Parent: ' + sub_parent_name);
+
+                    if (index == 0) {
+                        subparent_name_set.push(sub_parent_name);
+                    }
+
+                    // var type = line_item.getValue({ name: 'formulatext_1', formula: "DECODE({custbody_inv_type},'','Service','AP Products','Product',{custbody_inv_type})" });
+                    var type = line_item.getText({ name: 'custbody_inv_type', join: "transaction" });
+                    if (isNullorEmpty(type)) {
+                        type = 'Service';
+                    }
+
+
+                    var company_name = line_item.getValue({ name: "formulatext", formula: '{parent}' });
+                    console.log('Company Name: ' + company_name);
+                    var company_id = company_name.split(" ")[0];
+                    var company_id_length = parseInt(company_name.split(" ")[0].length);
+                    company_name = company_name.slice(company_id_length + 1);
+
+                    if (index == 0) {
+                        company_name_set.push(company_name);
+                        // csvTaxSet.push(["Date* " + date + '\n' + "Invoice #" + invoice_code + '\n' + 'Due Date ' + due_date + '\n' + 'ABN ' + abn + '\n' + 'Customer PO# ' + po_box + '\n' + 'Services From ' + service_from + '\n' + 'Services To ' + service_to + '\n' + 'Terms ' + terms]);
+                        // csvBillSet.push([billaddress]);
+                    }
+
+                    /**
+                     *  Tax Invoice Header
+                     */
+                    // var date = line_item.getValue({ name: 'trandate' });
+                    // var date_object = new Date();
+                    // //Invoice Number - Code + Year Number + Month Number (ie: 'CODE'2104)
+                    var location = line_item.getValue({ name: 'companyname'});
+                    // var year = JSON.stringify(date_object.getFullYear()).split('');
+                    // var year_code = year[2] + year[3];
+                    // var month = date_object.getMonth();
+                    // if (month < 10) {
+                    //     var month_code = '0' + month;
+                    // } else {
+                    //     var month_code = month;
+                    // }
+                    // var name_match = JSON.stringify(location).match(/\b(\w)/g);
+                    // var name_code = name_match.join('');
+                    // var invoice_code = name_code + year_code + month_code
+
+                    // var due_date = line_item.getValue({ name: 'duedate' })
+                    // var abn = '45 609 801 194'; // MailPlus ABN
+                    // //var abn = line_item.getValue({ name: 'custbody_franchisee_abn'} });
+                    // var po_box = line_item.getValue({ name: 'custentity11', join: 'customer' });
+                    // var service_from = line_item.getValue({ name: 'custbody_inv_date_range_from' });
+                    // // service_from = date_from;
+                    // var service_to = line_item.getValue({ name: 'custbody_inv_date_range_to' });
+                    // // service_to = date_to;
+                    // var terms = line_item.getValue({ name: 'terms' });
+
+                    /**
+                     *  Bill To Header
+                     */
+                    var billaddress = line_item.getValue({ name: 'billaddress', join: "transaction" });
+
+                    /**
+                     *  Table
+                     */
+                    // var location = line_item.getValue({ name: 'billaddressee' }); // companyname
+                    location_name_set.push(location);
+
+                    var item_id = line_item.getValue({ name: 'item', join: "transaction" });
+                    var item = '';
+                    // Item Record
+                    if (!isNullorEmpty(item_id)) {
+                        var service_type = '';
+                        if (type == 'MPEX Products') {
+                            service_type = "noninventoryitem";
+                        } else {
+                            service_type = 'serviceitem'
+                        }
+                        var itemRecord = record.load({
+                            type: service_type,
+                            id: item_id
+                        });
+                        if (!isNullorEmpty(itemRecord)) {
+                            item = itemRecord.getValue({ fieldId: 'itemid' });
+                        }
+                        console.log('item: ' + item)
+                    }
+                    //  var item = 'Counter Bankings';
+                    var details = line_item.getText({ name: 'custcol1', join: "transaction" });
+
+                    var ref_val = line_item.getValue({ name: 'tranid', join: "transaction" })
+                    var upload_url_inv = '/app/accounting/transactions/custinvc.nl?id=';
+                    var ref = '<a href="' + baseURL + upload_url_inv + invoice_id + '" target="_blank">' + ref_val + '</a>';
+                    var qty = line_item.getValue({ name: 'quantity', join: "transaction" })
+                    var rate = line_item.getValue({ name: 'rate', join: "transaction" })
+                    if (isNullorEmpty(rate)){
+                        rate = 0;
+                    }
+                    var amount = line_item.getValue({ name: 'amount', join: "transaction" });
+                    var gst = line_item.getValue({ name: 'taxamount', join: "transaction" });
+
+                    // var state = line_item.getValue({ name: 'billstate' }); // location
+                    var state = line_item.getText({ name: 'location', join: 'partner' });   
+                    console.log('State: ' + state)
+                    if (index == 0) {
+                        state_name_set.push(state);
+                        branch_name_set.push(location);
+
+                        csvOrder.push(invoice_code);
+                    }
+                    // if (state_tot_rate_index == 1) {
+                    //     state_name_set.push(state);
+                    // }
+                    if (branch_tot_rate_index == 1) {
+                        branch_name_set.push(location);
+                    }
+                    if (type_tot_rate_index == 1) {
+                        type_name_set.push(type);
+                    }
+
+                    if (company_name_set.indexOf(company_name) != -1) {
+                        tot_rate += parseFloat(rate.replace(/[]/g, '') * 1);
+                        tot_rate_index++;
+                        if (!isNullorEmpty(amount)) {
+                            // console.log('Amount' + amount)
+                            sub_total += parseFloat(amount.replace(/[]/g, '') * 1);
+                            // console.log('Sub Total' + sub_total)
+                        }
+                        tot_GST += parseFloat(gst.replace(/[]/g, '') * 1);
+                        total += parseFloat(gross.replace(/[]/g, '') * 1);
+                    }
+
+                    if (isNullorEmpty(gross)) {
+                        type += ' Total'
+                    }
                 }
 
                 /**
@@ -577,7 +743,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                         var list_length = company_name_set.length;
                         var previous_company_name = company_name_set[list_length - 1];
 
-                        if (branch_tot_rate_index >= 1){
+                        if (branch_tot_rate_index >= 1) {
                             invDataSet.push(['', previous_branch_name + ' Total', '', '', '', '', '', branch_tot_rate, branch_sub_total, branch_tot_GST, branch_total]) //'', 
                             csvTableSet.push(['', previous_branch_name + ' Total', '', '', '', '', '', branch_tot_rate, branch_sub_total, branch_tot_GST, branch_total]) //'', 
                         } else {
@@ -644,14 +810,14 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
 
                             var sub_parent_list_length = subparent_name_set.length;
                             var previous_sub_parent_name = subparent_name_set[sub_parent_list_length - 1];
-                            
+
                             console.log('State Function: Sub-Parent Name ' + previous_sub_parent_name);
                             console.log('State Function: Sub-Parent Array ' + JSON.stringify(subparent_name_set));
 
                             invDataSet.push([previous_company_name, previous_sub_parent_name, previous_state_name + ' Total', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total]) //'',
                             csvTableSet.push([previous_company_name, previous_sub_parent_name, previous_state_name + ' Total', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total]) //'',
                             csvTableSet.push(['', '', '', '', '', '', '', '', '', '', '', '']); //'',
-                            
+
                             // state_name_set = [];
                             state_tot_rate_index = 1;
                             state_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
@@ -659,7 +825,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                             state_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
                             state_total = parseFloat(gross.replace(/[]/g, '') * 1);
                         }
-                    } else { // Sub-Parent is new  but state 
+                    } else if (invoice_set.indexOf(invoice_id) == -1) { // Sub-Parent is new  but state 
                         console.log('State: Different Sub-Parent');
                         console.log('State: Start State');
 
@@ -686,7 +852,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
 
                         var company_number = company_name_set.indexOf(company_name);
 
-                        invDataSet.push([previous_company_name, previous_sub_parent_name, previous_state_name + ' Total', '', '', '', '', '<div class="col-xs-4"><input type="button" id="'+company_number+'" class="form-control btn-xs btn-danger downloadCompExcel"><span class="glyphicon glyphicon-eye-close"></span>Generate Company Excel</input></div>', state_tot_rate, state_sub_total, state_tot_GST, state_total]) //'',
+                        invDataSet.push([previous_company_name, previous_sub_parent_name, previous_state_name + ' Total', '', '', '', '', '<div class="col-xs-4"><input type="button" id="' + company_number + '" class="form-control btn-xs btn-danger downloadCompExcel"><span class="glyphicon glyphicon-eye-close"></span>Generate Company Excel</input></div>', state_tot_rate, state_sub_total, state_tot_GST, state_total]) //'',
                         csvTableSet.push([previous_company_name, previous_sub_parent_name, previous_state_name + ' Total', '', '', '', '', '', state_tot_rate, state_sub_total, state_tot_GST, state_total]) //'', 
                         csvTableSet.push(['', '', '', '', '', '', '', '', '', '', '', '']); //'',
 
@@ -698,7 +864,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                         state_total = parseFloat(gross.replace(/[]/g, '') * 1);
 
                         subparent_name_set.push(sub_parent_name);
-                    }                    
+                    }
                 } else if (consol_method_id == 3) {
                     if (company_name_set.indexOf(company_name) != -1) {
                         if (location_name_set.indexOf(location) != -1) {
@@ -811,7 +977,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                     var previous_company_name = company_name_set[list_length - 1];
                     console.log('Load New Line' + company_name_set, company_name, tot_rate, sub_total, tot_GST, total)
                     company_name_set.push(company_name);
-                    
+
                     var state_list_length = state_name_set.length;
                     if (state_list_length <= 1) {
                         var previous_state_name = state_name_set[state_list_length - 1];
@@ -826,9 +992,8 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                     if (consol_method_id == 2 || consol_method_id == 4) {
                         // var sub_parent_list_length = subparent_name_set.length;
                         // var previous_sub_parent_name = sub_parent_name[sub_parent_list_length - 1];
-
-                        invDataSet.push([previous_company_name + ' Total', '', '', '', '', '', '', tot_rate, sub_total, tot_GST, total]) //'',
-                        csvTableSet.push([previous_company_name + ' Total', '', '', '', '', '', '', tot_rate, sub_total, tot_GST, total]) //'', 
+                        invDataSet.push([previous_company_name + ' Total', '', '', '', '', '', '', '', tot_rate, sub_total, tot_GST, total]) //'',
+                        csvTableSet.push([previous_company_name + ' Total', '', '', '', '', '', '', '', tot_rate, sub_total, tot_GST, total]) //'', 
                         csvTableSet.push(['', '', '', '', '', '', '', '', '', '', '', '']); //, ''
                     } else {
                         invDataSet.push([previous_company_name + ' Total', '', '', '', '', '', '', tot_rate, sub_total, tot_GST, total]); // previous_state_name, | <button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="' + company_id + '" class="downloadPDF btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit">Download Company Export</button>
@@ -852,7 +1017,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                     state_name_set = [];
                     state_name_set.push(state);
                     state_tot_rate_index = 1;
-                    if (consol_method_id == 2 || consol_method_id == 4){
+                    if (consol_method_id == 2 || consol_method_id == 4) {
                         subparent_name_set.push(sub_parent_name);
                     }
                     state_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
@@ -883,10 +1048,11 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 // }
                 // }
 
-                csvOrder.push(invoice_code); // Pass through index of Company.
-                csvTaxSet.push(["Date* " + date + '\n' + "Invoice #" + invoice_code + '\n' + 'Due Date ' + due_date + '\n' + 'ABN ' + abn + '\n' + 'Customer PO# ' + po_box + '\n' + 'Services From ' + service_from + '\n' + 'Services To ' + service_to + '\n' + 'Terms ' + terms]);
-                csvBillSet.push([billaddress]);
-                csvTotalSet.push([csvTaxSet, csvBillSet, csvTableSet])
+                // csvOrder.push(invoice_code); // Pass through index of Company.
+                // csvTaxSet.push(["Date* " + date + '\n' + "Invoice #" + invoice_code + '\n' + 'Due Date ' + due_date + '\n' + 'ABN ' + abn + '\n' + 'Customer PO# ' + po_box + '\n' + 'Services From ' + service_from + '\n' + 'Services To ' + service_to + '\n' + 'Terms ' + terms]);
+                // csvBillSet.push([billaddress]);
+                // csvTotalSet.push([csvTaxSet, csvBillSet, csvTableSet])
+                csvTotalSet.push(['', '', csvTableSet])
 
                 index++;
                 return true;
