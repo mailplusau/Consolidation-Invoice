@@ -25,6 +25,8 @@ define(['N/runtime', 'N/search', 'N/record', 'N/log', 'N/task', 'N/currentRecord
 
         function main() {
 
+            
+
             var date_from = ctx.getParameter({ name: 'custscript_consol_inv_date_from' });
             if (isNullorEmpty(date_from) || isNaN(date_to)) {
                 date_from = '1/1/2020';
@@ -92,6 +94,8 @@ define(['N/runtime', 'N/search', 'N/record', 'N/log', 'N/task', 'N/currentRecord
             if (isNullorEmpty(main_index)) {
                 main_index = 0;
             }
+
+            deleteResultRecord(consol_method_id);
 
             // var timestamp = custscript_consol_inv_timestamp
             log.debug({
@@ -165,9 +169,9 @@ define(['N/runtime', 'N/search', 'N/record', 'N/log', 'N/task', 'N/currentRecord
             });
             consolInvItemResults.each(function (line_item) {
                 indexInCallback = index;
-                log.debug({
-                    title: 'In Loop'
-                });
+                // log.debug({
+                //     title: 'In Loop'
+                // });
 
                 var usageLimit = ctx.getRemainingUsage();
                 if (usageLimit < 100 || index == 999) {
@@ -213,6 +217,10 @@ define(['N/runtime', 'N/search', 'N/record', 'N/log', 'N/task', 'N/currentRecord
                         }
     
                         var invoice_id = line_item.getValue({ name: 'internalid' });
+                        log.debug({
+                            title: 'Invoice ID',
+                            details: invoice_id
+                        })
                         invoice_set.push(invoice_id);
                         var cust_id = line_item.getValue({ name: 'internalid', join: 'customer' });
     
@@ -296,8 +304,14 @@ define(['N/runtime', 'N/search', 'N/record', 'N/log', 'N/task', 'N/currentRecord
                         // Item Record
                         if (!isNullorEmpty(item_id)) {
                             var service_type = '';
+                            // log.debug({
+                            //     title: 'ITEM ID',
+                            //     details: item_id
+                            // })
                             if (type == 'MPEX Products' || parseInt(item_id) == 108) {
                                 service_type = "noninventoryitem";
+                            } else if (parseInt(item_id) == 114) {
+                                service_type = 'otherchargeitem'
                             } else {
                                 service_type = 'serviceitem'
                             }
@@ -438,8 +452,14 @@ define(['N/runtime', 'N/search', 'N/record', 'N/log', 'N/task', 'N/currentRecord
                         // Item Record
                         if (!isNullorEmpty(item_id)) {
                             var service_type = '';
-                            if (type == 'MPEX Products') {
+                            // log.debug({
+                            //     title: 'ITEM ID',
+                            //     details: item_id
+                            // })
+                            if (type == 'MPEX Products' || parseInt(item_id) == 108) {
                                 service_type = "noninventoryitem";
+                            } else if (parseInt(item_id) == 114) {
+                                service_type = 'otherchargeitem'
                             } else {
                                 service_type = 'serviceitem'
                             }
@@ -592,6 +612,45 @@ define(['N/runtime', 'N/search', 'N/record', 'N/log', 'N/task', 'N/currentRecord
                             branch_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
                             branch_total = parseFloat(gross.replace(/[]/g, '') * 1);
                             // }
+                        }
+                        if (branch_name_set.indexOf(location) == -1) { // && branch_tot_rate_index == 1
+                            // console.log('Branch: End Branch');
+                            log.debug({
+                                title: 'Branch: End Branch'
+                            })
+                            // type_name_set.push(type);
+                            branch_tot_rate = (branch_tot_rate / branch_tot_rate_index);
+                            branch_tot_rate = branch_tot_rate.toFixed(2);
+                            branch_sub_total = branch_sub_total.toFixed(2);
+                            branch_tot_GST = branch_tot_GST.toFixed(2);
+                            branch_total = branch_total.toFixed(2);
+    
+                            var branch_list_length = branch_name_set.length;
+                            var branch_name = branch_name_set[branch_list_length - 1];
+    
+                            var branch_list_length = branch_name_set.length;
+                            var previous_branch_name = branch_name_set[branch_list_length - 1];
+                            
+                            var list_length = company_name_set.length;
+                            var previous_company_name = company_name_set[list_length - 1];
+    
+                            if (branch_tot_rate_index >= 1) {
+                                invDataSet.push(['', previous_branch_name + ' Total', '', '', '', '', '', branch_tot_rate, branch_sub_total, branch_tot_GST, branch_total]) //'', 
+                                csvTableSet.push(['', previous_branch_name + ' Total', '', '', '', '', '', branch_tot_rate, branch_sub_total, branch_tot_GST, branch_total]) //'', 
+                            } else {
+                                invDataSet.push([previous_company_name, previous_branch_name + ' Total', '', '', '', '', '', branch_tot_rate, branch_sub_total, branch_tot_GST, branch_total]) //'', 
+                                csvTableSet.push([previous_company_name, previous_branch_name + ' Total', '', '', '', '', '', branch_tot_rate, branch_sub_total, branch_tot_GST, branch_total]) //'', 
+                            }
+                            if (branch_tot_rate_index != 1) {
+                                csvTableSet.push(['', '', '', '', '', '', '', '', '', '', '', '']);
+                            }
+    
+                            branch_name_set = [];
+                            branch_tot_rate_index = 1;
+                            branch_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
+                            branch_sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
+                            branch_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
+                            branch_total = parseFloat(gross.replace(/[]/g, '') * 1);
                         }
                     } else if (consol_method_id == 2 || consol_method_id == 4) {
                         // if (company_name_set.indexOf(company_name) != -1) { // if Company Name is in the list.
@@ -763,10 +822,10 @@ define(['N/runtime', 'N/search', 'N/record', 'N/log', 'N/task', 'N/currentRecord
                         }
                     }
 
-                    log.debug({
-                        title: 'State Index Outside of Loops: ',
-                        details: state_name_set.indexOf(state)
-                    });
+                    // log.debug({
+                    //     title: 'State Index Outside of Loops: ',
+                    //     details: state_name_set.indexOf(state)
+                    // });
 
                     if ((company_name_set.indexOf(company_name) == -1 && index != 0 && index != 1) || index == (consolInvItemResultsLength - 1)) { // When Company Name is New
                         /**
@@ -801,10 +860,12 @@ define(['N/runtime', 'N/search', 'N/record', 'N/log', 'N/task', 'N/currentRecord
                             // var sub_parent_list_length = subparent_name_set.length;
                             // var previous_sub_parent_name = sub_parent_name[sub_parent_list_length - 1];
                             invDataSet.push([previous_company_name + ' Total', '', '', '', '', '', '', '', tot_rate, sub_total, tot_GST, total]) //'',
+                            // csvTableSet.pop();
                             csvTableSet.push([previous_company_name + ' Total', '', '', '', '', '', '', '', tot_rate, sub_total, tot_GST, total]) //'', 
                             csvTableSet.push(['', '', '', '', '', '', '', '', '', '', '', '']); //, ''
                         } else {
                             invDataSet.push([previous_company_name + ' Total', '', '', '', '', '', '', tot_rate, sub_total, tot_GST, total]); // previous_state_name, | <button style="background-color: #FBEA51; color: #103D39; font-weight: 700; border-color: transparent; border-width: 2px; border-radius: 15px; height: 30px" type="button" id="' + company_id + '" class="downloadPDF btn btn-block-form btn-primary mt-3 lift get-in-touch-button get-in-touch-button-submit">Download Company Export</button>
+                            // csvTableSet.pop();
                             csvTableSet.push([previous_company_name + ' Total', '', '', '', '', '', '', tot_rate, sub_total, tot_GST, total]) //previous_state_name,
                             csvTableSet.push(['', '', '', '', '', '', '', '', '', '', '', '']);
                         }
@@ -861,14 +922,14 @@ define(['N/runtime', 'N/search', 'N/record', 'N/log', 'N/task', 'N/currentRecord
                     // csvBillSet.push([billaddress]);
                     // csvTotalSet.push([csvTaxSet, csvBillSet, csvTableSet])
 
-                    log.debug({
-                        title: 'Completed Loop: Inv',
-                        details: JSON.stringify(invDataSet)
-                    });
-                    log.debug({
-                        title: 'Completed Loop: CSV',
-                        details: JSON.stringify(csvDataSet)
-                    });
+                    // log.debug({
+                    //     title: 'Completed Loop: Inv',
+                    //     details: JSON.stringify(invDataSet)
+                    // });
+                    // log.debug({
+                    //     title: 'Completed Loop: CSV',
+                    //     details: JSON.stringify(csvDataSet)
+                    // });
                     index++;
                     return true;
                 }
@@ -1039,6 +1100,49 @@ define(['N/runtime', 'N/search', 'N/record', 'N/log', 'N/task', 'N/currentRecord
             }
 
             return consolInvItemSearch;
+        }
+
+        function deleteResultRecord(consol_method_id) {
+            var del_index = 0;
+            var usage_loopstart_cust = ctx.getRemainingUsage();
+            // if (usage_loopstart_cust < 4) { // || index == 3999
+            //     // Rescheduling a scheduled script doesn't consumes any governance units.
+            //     var delReschedule = task.create({
+            //         taskType: task.TaskType.SCHEDULED_SCRIPT,
+            //         scriptId: 'customscript_ss_debt_coll_delete',
+            //         deploymentId: 'customdeploy_ss_debt_coll_delete'
+            //     });
+            //     var delResult = delReschedule.submit();
+            // }
+            log.debug({
+                title: 'Delete index',
+                details: del_index
+            });
+            var sea = search.load({
+                id: 'customsearch_consol_inv_json',
+                type: 'customrecord_consol_inv_json'
+            });
+            sea.filters.push(search.createFilter({
+                name: 'custrecord_consol_inv_method',
+                operator: search.Operator.IS,
+                values: consol_method_id.toFixed(1)
+            }));
+            sea.run().each(function(res){
+                record.delete({
+                    type: 'customrecord_debt_coll_inv',
+                    id: res.getValue({name: 'internalid'})
+                });
+                log.debug({
+                    title: 'Removed',
+                    details: 'Removed'
+                });
+                log.debug({
+                    title: 'Usage',
+                    details: usage_loopstart_cust
+                });
+                del_index++;
+            });
+            // Deleting a record consumes 4 governance units.
         }
 
         function isNullorEmpty(strVal) {

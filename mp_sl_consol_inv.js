@@ -173,7 +173,7 @@ define(['N/ui/serverWidget', 'N/email', 'N/runtime', 'N/search', 'N/record', 'N/
                 // inlineHtml += zeeDropdownSection(zee_id);
                 if (!isNullorEmpty(consol_method_id)){
 
-                    inlineHtml += generateInvoice();
+                    // inlineHtml += generateInvoice();
 
                     inlineHtml += dataTable();
 

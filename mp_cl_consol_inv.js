@@ -125,7 +125,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 window.location.href = upload_url
             });
 
-            $('#generateInvoice').click(function () {
+            // $('#generateInvoice').click(function () {
                 $('#downloadExcel').removeClass('hide'); // Excel Download Button.
                 $('.generateInvoiceSection').removeClass('hide');
                 $('#inv_preview').show();
@@ -233,11 +233,11 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                 }
 
                 // if (consol_method_id == 4) {
-                loadInvRecord(consol_method_id);
+                // loadInvRecord(consol_method_id);
                 // } else {
-                // loadMultiParentScript(consol_method_id, period);
+                loadMultiParentScript(consol_method_id, period);
                 // }
-            });
+            // });
 
             // $('#downloadAsPDF').click(function () {
             //     downloadPDF();
@@ -359,7 +359,7 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
             }
 
             var consolInvItemResultsLength = consolInvItemSearch.runPaged().count; // console.log('Result Length: ' + consolInvItemResultsLength);
-            var consolInvItemResults = consolInvItemSearch.run().getRange({ start: 240, end: 250 });
+            var consolInvItemResults = consolInvItemSearch.run().getRange({ start: 0, end: 60 });
             // console.log('Results: ' + JSON.parse(JSON.stringify(consolInvItemResults)));
             var company_name_set = [];
             var location_name_set = [];
@@ -468,6 +468,8 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                         var service_type = '';
                         if (type == 'MPEX Products' || parseInt(item_id) == 108) {
                             service_type = "noninventoryitem";
+                        } else if (parseInt(item_id) == 114) {
+                            service_type = 'otherchargeitem'
                         } else {
                             service_type = 'serviceitem'
                         }
@@ -608,8 +610,10 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                     // Item Record
                     if (!isNullorEmpty(item_id)) {
                         var service_type = '';
-                        if (type == 'MPEX Products') {
+                        if (type == 'MPEX Products' || parseInt(item_id) == 108) {
                             service_type = "noninventoryitem";
+                        } else if (parseInt(item_id) == 114) {
+                            service_type = 'otherchargeitem'
                         } else {
                             service_type = 'serviceitem'
                         }
@@ -761,6 +765,51 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
                         branch_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
                         branch_total = parseFloat(gross.replace(/[]/g, '') * 1);
                         // }
+                    }
+                    if (branch_name_set.indexOf(location) == -1) { // && branch_tot_rate_index == 1
+                        console.log('Branch: End Branch');
+                        // type_name_set.push(type);
+                        branch_tot_rate = (branch_tot_rate / branch_tot_rate_index);
+                        branch_tot_rate = branch_tot_rate.toFixed(2);
+                        branch_sub_total = branch_sub_total.toFixed(2);
+                        branch_tot_GST = branch_tot_GST.toFixed(2);
+                        branch_total = branch_total.toFixed(2);
+
+                        console.log('branch End: branch ' + branch);
+                        console.log('branch End: Index ' + branch_name_set.indexOf(branch))
+                        console.log('branch End: List ' + JSON.stringify(branch_name_set));
+
+                        var branch_list_length = branch_name_set.length;
+                        var branch_name = branch_name_set[branch_list_length - 1];
+                        console.log('branch End: Pre-branch Name First ' + branch_name);
+
+                        var branch_list_length = branch_name_set.length;
+                        if (branch_list_length <= 1) {
+                            var previous_branch_name = branch_name_set[branch_list_length - 1];
+                        } else {
+                            var previous_branch_name = branch_name_set[branch_list_length - 2];
+                        }
+
+                        var list_length = company_name_set.length;
+                        var previous_company_name = company_name_set[list_length - 1];
+
+                        if (branch_tot_rate_index >= 1) {
+                            invDataSet.push(['', previous_branch_name + ' Total', '', '', '', '', '', branch_tot_rate, branch_sub_total, branch_tot_GST, branch_total]) //'', 
+                            csvTableSet.push(['', previous_branch_name + ' Total', '', '', '', '', '', branch_tot_rate, branch_sub_total, branch_tot_GST, branch_total]) //'', 
+                        } else {
+                            invDataSet.push([previous_company_name, previous_branch_name + ' Total', '', '', '', '', '', branch_tot_rate, branch_sub_total, branch_tot_GST, branch_total]) //'', 
+                            csvTableSet.push([previous_company_name, previous_branch_name + ' Total', '', '', '', '', '', branch_tot_rate, branch_sub_total, branch_tot_GST, branch_total]) //'', 
+                        }
+                        if (branch_tot_rate_index != 1) {
+                            csvTableSet.push(['', '', '', '', '', '', '', '', '', '', '', '']);
+                        }
+
+                        branch_name_set = [];
+                        branch_tot_rate_index = 1;
+                        branch_tot_rate = parseFloat(rate.replace(/[]/g, '') * 1);
+                        branch_sub_total = parseFloat(amount.replace(/[]/g, '') * 1);
+                        branch_tot_GST = parseFloat(gst.replace(/[]/g, '') * 1);
+                        branch_total = parseFloat(gross.replace(/[]/g, '') * 1);
                     }
                 } else if (consol_method_id == 2 || consol_method_id == 4) {
                     console.log('Sub-Parent Array: ' + JSON.stringify(subparent_name_set));
@@ -1191,16 +1240,16 @@ define(['N/error', 'N/runtime', 'N/search', 'N/url', 'N/record', 'N/format', 'N/
 
             console.log('CSV Data Set (STRING): ' + JSON.stringify(csvDataSet));
 
-            csvDataSet[0].forEach(function (row) { // Tax Info
-                csv += row;
-                csv += '\n';
-            });
-            csv += "\n\n";
-            csvDataSet[1].forEach(function (row) { // Bill Address
-                csv += row;
-                csv += '\n';
-            });
-            csv += "\n\n";
+            // csvDataSet[0].forEach(function (row) { // Tax Info
+            //     csv += row;
+            //     csv += '\n';
+            // });
+            // csv += "\n\n";
+            // csvDataSet[1].forEach(function (row) { // Bill Address
+            //     csv += row;
+            //     csv += '\n';
+            // });
+            // csv += "\n\n";
 
             csv += headers + "\n";
             csvDataSet[2].forEach(function (row) { // Table Data Set
